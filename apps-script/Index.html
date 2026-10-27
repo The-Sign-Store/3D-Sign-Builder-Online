@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>html,body{margin:0}body{font:14px system-ui,-apple-system,'Segoe UI',sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: control rail on the left, full-height scale stage on the right; stacks (stage first) on phones. */
+:root {
+  --bg: #e9ecef;
+  --panel: #ffffff;
+  --panel-2: #f4f6f8;
+  --ink: #1a1e23;
+  --muted: #5a6470;
+  --line: #d3d8de;
+  --accent: #c97a00;        /* LED amber */
+  --accent-soft: #c97a0019;
+  --accent-ink: #ffffff;
+  --focus: #2f6fd6;
+  --font-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --panel: #171b21; --panel-2: #1e232b; --ink: #e7eaee; --muted: #99a3b0;
+    --line: #2c333d; --accent: #f0a63a; --accent-soft: #f0a63a22; --accent-ink: #1a1206; --focus: #79a8ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1216; --panel: #171b21; --panel-2: #1e232b; --ink: #e7eaee; --muted: #99a3b0;
+  --line: #2c333d; --accent: #f0a63a; --accent-soft: #f0a63a22; --accent-ink: #1a1206; --focus: #79a8ff;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+* { box-sizing: border-box; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(300px, 370px) 1fr;
+  gap: 16px;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.rail {
+  min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  padding-right: 4px; scrollbar-gutter: stable;
+}
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 2px 2px 4px; }
+.brand h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 30px; letter-spacing: .01em;
+  line-height: 1; text-transform: uppercase; text-wrap: balance;
+}
+.brand h1 span { color: var(--accent); }
+.brand small { color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.card > header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line);
+}
+.card > header h2 {
+  margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: .06em; text-transform: uppercase;
+}
+.card .body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+label.f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+label.f > span { font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+input[type=number], input[type=text], select, textarea {
+  width: 100%; min-width: 0; font: inherit; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 7px; padding: 7px 8px;
+}
+input[type=number] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+textarea { resize: vertical; min-height: 54px; font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: .02em; }
+input[type=color] { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-2); padding: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 13px; }
+.toggle input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+
+.seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { text-align: center; padding: 7px 6px; cursor: pointer; font-size: 12.5px; color: var(--muted); background: var(--panel-2); border-left: 1px solid var(--line); }
+.seg label:first-of-type { border-left: 0; }
+.seg input:checked + label { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+.btn {
+  font: inherit; font-weight: 600; font-size: 13px; border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { padding: 5px 9px; font-size: 12px; }
+.file { position: relative; display: flex; gap: 8px; align-items: center; }
+.file input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.file .btn { pointer-events: none; }
+.hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.hint b { color: var(--ink); font-weight: 600; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.src-name { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.chip { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 6px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.sub { border-top: 1px dashed var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.specs { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 12.5px; }
+.specs dt { color: var(--muted); }
+.specs dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+.stage-wrap { position: relative; min-width: 0; min-height: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: #05070c; }
+#stage { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#stage.dragging { cursor: grabbing; }
+.hud { position: absolute; display: flex; gap: 6px; align-items: center; }
+.hud.tl { top: 12px; left: 12px; right: 110px; flex-wrap: wrap; }
+.hud .seg { border-color: rgba(255,255,255,.18); background: rgba(14,17,22,.78); }
+.hud .seg label { background: transparent; color: #cfd6de; border-left-color: rgba(255,255,255,.18); padding: 5px 11px; font-weight: 600; }
+.hud .seg input:checked + label { background: #f0a63a; color: #1a1206; }
+#stage3d { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.hud-note { position: absolute; top: 56px; left: 12px; max-width: 320px; }
+.hud.tr { top: 12px; right: 12px; }
+.hud.bl { bottom: 12px; left: 12px; right: 12px; justify-content: space-between; flex-wrap: wrap; pointer-events: none; }
+.hud .btn { background: rgba(14,17,22,.78); color: #eef1f4; border-color: rgba(255,255,255,.18); backdrop-filter: blur(6px); }
+.hud .btn.on { background: #f0a63a; color: #1a1206; border-color: #f0a63a; }
+.readout {
+  font-family: var(--font-mono); font-size: 11.5px; color: #e9edf2; background: rgba(10,12,16,.7);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 8px; padding: 6px 9px; backdrop-filter: blur(6px);
+}
+.drop-note { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-family: var(--font-display); font-size: 26px; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(240,166,58,.18); border: 3px dashed #f0a63a; border-radius: var(--radius); }
+
+.modal { position: fixed; inset: 0; background: rgba(5,7,10,.72); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-width: min(960px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.modal img { max-width: 100%; border-radius: 6px; border: 1px solid var(--line); }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { height: auto; grid-template-columns: 1fr; }
+  .stage-wrap { order: -1; height: 64svh; min-height: 340px; }
+  .rail { overflow: visible; padding-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="Sign settings">
+    <div class="brand">
+      <h1>3D Sign <span>Builder</span></h1>
+      <small>front view · to scale</small>
+    </div>
+
+    <section class="card">
+      <header><h2>Sign type</h2><button class="btn small" id="resetPreset" type="button">Reset sizes</button></header>
+      <div class="body">
+        <label class="f"><span>Preset</span>
+          <select id="preset">
+            <option value="PYLON">Pylon: top cabinet + LED (Sign Builder v02)</option>
+            <option value="CC_A">CC-A · 4' x 8' changeable copy</option>
+            <option value="CC_B">CC-B · 5' x 8' changeable copy</option>
+            <option value="CC_C">CC-C · 5' x 8' peak roof changeable copy</option>
+            <option value="LED_A">LED-A · 24" x 85" + 10mm LED</option>
+            <option value="LED_B">LED-B · 24" x 75" + 10mm LED</option>
+          </select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="dbl" data-path="double">Double-sided (back face shows in 3D)</label>
+        <dl class="specs" id="specs"></dl>
+      </div>
+    </section>
+
+    <div id="slotCards"></div>
+
+    <section class="card">
+      <header><h2>Top cabinet</h2><label class="toggle"><input type="checkbox" id="top-on" data-path="top.on">Show</label></header>
+      <div class="body" data-show="top.on">
+        <div class="row three">
+          <label class="f"><span>Width in</span><input id="top-w" type="number" min="12" step="1" data-path="top.w"></label>
+          <label class="f"><span>Height in</span><input id="top-h" type="number" min="8" step="1" data-path="top.h"></label>
+          <label class="f"><span>Retainer in</span><input id="top-ret" type="number" min="0.5" max="6" step="0.25" data-path="top.ret"></label>
+        </div>
+        <div class="row three">
+          <label class="f"><span>Face</span>
+            <select id="top-face" data-path="top.face"><option value="flat">Flat</option><option value="pan">Pan</option></select>
+          </label>
+          <label class="f"><span>Peak rise in</span><input id="top-peak" type="number" min="0" max="48" step="1" data-path="top.peak"></label>
+          <label class="f"><span>Depth in</span><input id="top-d" type="number" min="4" step="1" data-path="top.d"></label>
+        </div>
+        <label class="toggle"><input type="checkbox" id="top-copy" data-path="top.copy">Changeable copy (H-bar + letter tracks)</label>
+        <div class="sub" data-show="top.copy">
+          <div class="row three">
+            <label class="f"><span>Lines</span><input id="top-lines" type="number" min="1" max="5" step="1" data-path="top.lines"></label>
+            <label class="f"><span>Letter in</span><input id="top-letter" type="number" min="2" max="12" step="1" data-path="top.letter"></label>
+            <label class="f"><span>Panel in</span><input id="top-panel" type="number" min="3" max="14" step="1" data-path="top.panel"></label>
+          </div>
+          <label class="f"><span>Letter copy (one line per row)</span><textarea id="top-copytext" rows="3" spellcheck="false"></textarea></label>
+        </div>
+        <div class="sub">
+          <label class="toggle"><input type="checkbox" id="topRev-on" data-path="topRev.on">Reveal below</label>
+          <div class="row" data-show="topRev.on">
+            <label class="f"><span>Reveal height in</span><input id="topRev-h" type="number" min="0.5" step="0.5" data-path="topRev.h"></label>
+            <label class="f"><span>Recess in</span><input id="topRev-r" type="number" min="0" step="0.5" data-path="topRev.recess"></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>LED display</h2><label class="toggle"><input type="checkbox" id="led-on" data-path="led.on">Show</label></header>
+      <div class="body" data-show="led.on">
+        <div class="row three">
+          <label class="f"><span>Pitch</span>
+            <select id="led-pitch" data-path="led.pitch" data-num="1">
+              <option value="5">5mm SMD</option><option value="6">6mm SMD</option><option value="8">8mm SMD</option>
+              <option value="10">10mm DIP</option><option value="12">12mm DIP</option><option value="16">16mm DIP</option><option value="20">20mm DIP</option>
+            </select>
+          </label>
+          <label class="f"><span>Matrix W px</span><input id="led-cols" type="number" min="8" step="1" data-path="led.cols"></label>
+          <label class="f"><span>Matrix H px</span><input id="led-rows" type="number" min="8" step="1" data-path="led.rows"></label>
+        </div>
+        <div class="row"><label class="f"><span>Cabinet depth in</span><input id="led-d" type="number" min="4" step="1" data-path="led.d"></label></div>
+        <p class="hint" id="ledHint"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Bottom cabinet</h2><label class="toggle"><input type="checkbox" id="bot-on" data-path="bot.on">Show</label></header>
+      <div class="body" data-show="bot.on">
+        <div class="row three">
+          <label class="f"><span>Width in</span><input id="bot-w" type="number" min="12" step="1" data-path="bot.w"></label>
+          <label class="f"><span>Height in</span><input id="bot-h" type="number" min="6" step="1" data-path="bot.h"></label>
+          <label class="f"><span>Retainer in</span><input id="bot-ret" type="number" min="0.5" max="6" step="0.25" data-path="bot.ret"></label>
+        </div>
+        <div class="row">
+          <label class="f"><span>Face</span>
+            <select id="bot-face" data-path="bot.face"><option value="flat">Flat polycarbonate</option><option value="pan">Pan face</option></select>
+          </label>
+          <label class="f"><span>Depth in</span><input id="bot-d" type="number" min="4" step="1" data-path="bot.d"></label>
+        </div>
+        <div class="sub">
+          <label class="toggle"><input type="checkbox" id="botRev-on" data-path="botRev.on">Reveal above</label>
+          <div class="row" data-show="botRev.on">
+            <label class="f"><span>Reveal height in</span><input id="botRev-h" type="number" min="0.5" step="0.5" data-path="botRev.h"></label>
+            <label class="f"><span>Recess in</span><input id="botRev-r" type="number" min="0" step="0.5" data-path="botRev.recess"></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Pole &amp; cover</h2></header>
+      <div class="body">
+        <div class="row three">
+          <label class="f"><span>Cover W in</span><input id="pole-cw" type="number" min="0" step="1" data-path="pole.coverW"></label>
+          <label class="f"><span>Cover H in</span><input id="pole-ch" type="number" min="0" step="1" data-path="pole.coverH"></label>
+          <label class="f"><span>Cover D in</span><input id="pole-cd" type="number" min="1" step="1" data-path="pole.coverD"></label>
+        </div>
+        <div class="row">
+          <label class="f"><span>Steel pole</span>
+            <select id="pole-size" data-path="pole.size" data-num="1">
+              <option value="3">3 x 3</option><option value="4">4 x 4</option><option value="6">6 x 6</option><option value="8">8 x 8</option><option value="10">10 x 10</option><option value="12">12 x 12</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Scene</h2></header>
+      <div class="body">
+        <div class="seg" role="radiogroup" aria-label="Scene">
+          <input type="radio" name="scene" id="scene-day" value="day"><label for="scene-day">Day</label>
+          <input type="radio" name="scene" id="scene-night" value="night"><label for="scene-night">Night</label>
+          <input type="radio" name="scene" id="scene-photo" value="photo"><label for="scene-photo">Site photo</label>
+        </div>
+        <div class="sub" data-show="view.isPhoto">
+          <div class="file"><input type="file" id="photoFile" accept="image/*" aria-label="Upload a site photo"><span class="btn small">Upload site photo</span><span class="src-name" id="photoName">No photo yet</span></div>
+          <label class="f"><span>Sign left / right</span><input type="range" id="ph-x" min="0" max="1" step="0.005" data-path="view.posX"></label>
+          <label class="f"><span>Ground line</span><input type="range" id="ph-y" min="0.3" max="1" step="0.005" data-path="view.posY"></label>
+          <label class="f"><span>Sign size</span><input type="range" id="ph-s" min="0.1" max="0.95" step="0.005" data-path="view.size"></label>
+          <label class="toggle"><input type="checkbox" id="ph-dark" data-path="view.photoNight">Night lighting on the sign</label>
+        </div>
+        <div class="row">
+          <label class="toggle"><input type="checkbox" id="v-dims" data-path="view.dims">Dimensions</label>
+          <label class="toggle"><input type="checkbox" id="v-person" data-path="view.person">6 ft person</label>
+        </div>
+      </div>
+    </section>
+    <p class="hint">Tip: drag an image or video straight onto a sign face or the LED board. In 2D, scroll to zoom and drag to pan. In 3D, drag to orbit, scroll to zoom, and shift-drag (or right-drag) to pan.</p>
+  </aside>
+
+  <main class="stage-wrap" id="stageWrap">
+    <canvas id="stage" aria-label="Scale front view of the sign"></canvas>
+    <canvas id="stage3d" aria-label="3D view of the sign. Drag to orbit, scroll to zoom, shift-drag to pan" hidden></canvas>
+    <div class="hud tl">
+      <div class="seg" role="radiogroup" aria-label="View mode">
+        <input type="radio" name="mode" id="mode-2d" value="2d" checked><label for="mode-2d">2D</label>
+        <input type="radio" name="mode" id="mode-3d" value="3d"><label for="mode-3d">3D</label>
+      </div>
+      <button class="btn small" id="zoomIn" type="button" aria-label="Zoom in">+</button>
+      <button class="btn small" id="zoomOut" type="button" aria-label="Zoom out">&minus;</button>
+      <button class="btn small" id="zoomFit" type="button">Fit</button>
+      <button class="btn small" id="zoomLed" type="button">LED close-up</button>
+      <span id="views3d" hidden style="display:contents">
+        <button class="btn small" type="button" data-view="front">Front</button>
+        <button class="btn small" type="button" data-view="34">3/4</button>
+        <button class="btn small" type="button" data-view="back">Back</button>
+      </span>
+    </div>
+    <span class="readout hud-note" id="note3d" hidden></span>
+    <div class="hud tr">
+      <button class="btn small" id="snap" type="button">Snapshot</button>
+    </div>
+    <div class="hud bl"><span class="readout" id="readout"></span><span class="readout" id="zoomRead">100%</span></div>
+    <div class="drop-note" id="dropNote" hidden>Drop on a face or the LED board</div>
+  </main>
+</div>
+
+<div class="modal" id="snapModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <strong id="snapTitle">Snapshot</strong>
+      <button class="btn small" id="snapClose" type="button">Close</button>
+    </div>
+    <img id="snapImg" alt="Snapshot of the sign preview">
+    <p class="hint">Right-click the image and choose <b>Save image as</b>, or press and hold on a phone.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const FONT = '"Barlow Condensed", "Arial Narrow", Arial, sans-serif';
+const MM = 1 / 25.4;
+
+/* ---------------- Presets (inches) ---------------- */
+const BASE = () => ({
+  double: true,
+  top:   { on: true, w: 96, h: 48, d: 12, ret: 2, face: 'flat', peak: 0, copy: false, lines: 3, letter: 6, panel: 7, track: 1, hbar: 2,
+           copyText: 'GRAND OPENING\nWEEKLY SPECIALS\nNOW HIRING' },
+  topRev:{ on: false, h: 2, recess: 1 },
+  led:   { on: false, pitch: 10, cols: 192, rows: 72, d: 12 },
+  botRev:{ on: false, h: 2, recess: 1 },
+  bot:   { on: false, w: 100, h: 20, d: 12, ret: 2, face: 'flat' },
+  pole:  { size: 6, coverW: 46, coverH: 60, coverD: 12 },
+});
+const PRESETS = {
+  PYLON: s => { Object.assign(s.top, { w: 100, h: 30, d: 18, face: 'pan', peak: 0, copy: false });
+                Object.assign(s.topRev, { on: true, h: 2, recess: 1 });
+                Object.assign(s.led, { on: true, pitch: 10, cols: 240, rows: 120, d: 18 });
+                Object.assign(s.pole, { size: 8, coverW: 24, coverH: 36 }); },
+  CC_A:  s => { Object.assign(s.top, { w: 96, h: 48, copy: true }); },
+  CC_B:  s => { Object.assign(s.top, { w: 96, h: 60, copy: true }); },
+  CC_C:  s => { Object.assign(s.top, { w: 96, h: 60, copy: true, peak: 14 }); },
+  LED_A: s => { Object.assign(s.top, { w: 85, h: 24 }); Object.assign(s.led, { on: true, pitch: 10, cols: 216, rows: 72 }); },
+  LED_B: s => { Object.assign(s.top, { w: 75, h: 24 }); Object.assign(s.led, { on: true, pitch: 10, cols: 192, rows: 72 });
+                s.pole.coverW = 34; },
+};
+
+const S = Object.assign(BASE(), {
+  preset: 'LED_A',
+  view: { scene: 'night', dims: true, person: true, posX: 0.5, posY: 0.86, size: 0.55, photoNight: false, isPhoto: false },
+});
+PRESETS.LED_A(S);
+
+const view = { zoom: 1, panX: 0, panY: 0 };
+let base = { s0: 4, ox: 0, oy: 0 };
+let photo = null;
+let dirty = true;
+
+/* ---------------- Content slots ---------------- */
+const SLOT_META = {
+  top: { title: 'Top face', on: () => S.top.on },
+  led: { title: 'LED board', on: () => S.led.on },
+  bot: { title: 'Bottom face', on: () => S.bot.on },
+};
+const slots = {
+  top: { type: 'media', media: null, kind: 'image', fit: 'contain', bg: '#ffffff', text: 'YOUR LOGO\nHERE', color: '#1a1e23', scroll: false, speed: 1, name: 'Sample artwork', url: null, backMode: 'same', back: { media: null, kind: 'image', url: null, name: '' } },
+  led: { type: 'media', media: null, kind: 'image', fit: 'cover', bg: '#000000', text: 'FALL SALE\n20% OFF ALL WEEK', color: '#ffd23f', scroll: true, speed: 1, name: 'Sample promo', url: null, backMode: 'same', back: { media: null, kind: 'image', url: null, name: '' } },
+  bot: { type: 'text', media: null, kind: 'image', fit: 'contain', bg: '#ffffff', text: 'DRIVE-THRU OPEN', color: '#1f5d4c', scroll: false, speed: 1, name: '', url: null, backMode: 'same', back: { media: null, kind: 'image', url: null, name: '' } },
+};
+
+function makeSamples() {
+  // Sample logo for the lit face (invented business, clearly a placeholder)
+  const a = document.createElement('canvas'); a.width = 1200; a.height = 360;
+  let c = a.getContext('2d');
+  c.fillStyle = '#ffffff'; c.fillRect(0, 0, 1200, 360);
+  c.fillStyle = '#1f5d4c'; c.beginPath(); c.arc(190, 180, 130, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#ffffff'; c.beginPath();
+  c.moveTo(110, 225); c.quadraticCurveTo(190, 70, 270, 225); c.quadraticCurveTo(190, 175, 110, 225); c.fill();
+  c.fillStyle = '#e07a2e'; c.beginPath(); c.arc(190, 120, 22, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#1f5d4c'; c.textBaseline = 'alphabetic';
+  c.font = `800 150px ${FONT}`; c.fillText('RIVERBEND', 350, 200, 820);
+  c.fillStyle = '#e07a2e'; c.font = `700 70px ${FONT}`; c.fillText('COFFEE  ·  BAKERY', 356, 290, 800);
+  if (!slots.top.url) { slots.top.media = a; slots.top.kind = 'image'; }
+
+  // Sample promo for the LED board, 3:1
+  const b = document.createElement('canvas'); b.width = 648; b.height = 216;
+  c = b.getContext('2d');
+  const g = c.createLinearGradient(0, 0, 648, 216); g.addColorStop(0, '#18206b'); g.addColorStop(.55, '#7a1d8c'); g.addColorStop(1, '#e2365b');
+  c.fillStyle = g; c.fillRect(0, 0, 648, 216);
+  c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(560, 108, 78, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#18206b'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `800 64px ${FONT}`; c.fillText('20%', 560, 92);
+  c.font = `800 34px ${FONT}`; c.fillText('OFF', 560, 140);
+  c.textAlign = 'left'; c.fillStyle = '#ffffff'; c.font = `800 104px ${FONT}`; c.fillText('FALL SALE', 34, 92, 430);
+  c.fillStyle = '#ffd23f'; c.font = `700 40px ${FONT}`; c.fillText('ALL WEEK · OPEN 7 DAYS', 38, 170, 430);
+  if (!slots.led.url) { slots.led.media = b; slots.led.kind = 'image'; }
+}
+
+/* ---------------- Geometry helpers ---------------- */
+const area = p => 0.5 * p.reduce((s, q, i) => { const r = p[(i + 1) % p.length]; return s + q[0] * r[1] - r[0] * q[1]; }, 0);
+function inset(poly, d) {
+  const n = poly.length, sg = area(poly) > 0 ? 1 : -1, lines = [];
+  for (let i = 0; i < n; i++) {
+    const [x0, y0] = poly[i], [x1, y1] = poly[(i + 1) % n];
+    const ex = x1 - x0, ey = y1 - y0, L = Math.hypot(ex, ey) || 1;
+    const nx = -ey / L * sg, ny = ex / L * sg;
+    lines.push([[x0 + nx * d, y0 + ny * d], [ex, ey]]);
+  }
+  return lines.map((_, i) => {
+    const [p1, d1] = lines[(i - 1 + n) % n], [p2, d2] = lines[i];
+    const cr = d1[0] * d2[1] - d1[1] * d2[0];
+    if (Math.abs(cr) < 1e-9) return p2;
+    const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / cr;
+    return [p1[0] + t * d1[0], p1[1] + t * d1[1]];
+  });
+}
+function clipY(poly, c, above) {
+  const inside = p => above ? p[1] >= c - 1e-9 : p[1] <= c + 1e-9, out = [];
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length], ia = inside(a), ib = inside(b);
+    if (ia) out.push(a);
+    if (ia !== ib) { const t = (c - a[1]) / (b[1] - a[1]); out.push([a[0] + t * (b[0] - a[0]), c]); }
+  });
+  return out;
+}
+const bbox = p => { const xs = p.map(q => q[0]), ys = p.map(q => q[1]); return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
+
+/* ---------------- Layout (world inches, y up, x centred on pole) ---------------- */
+function ledSize() { return { w: S.led.cols * S.led.pitch * MM, h: S.led.rows * S.led.pitch * MM }; }
+function layout() {
+  const L = { parts: [], faces: {}, chain: [] };
+  let y = Math.max(0, S.pole.coverH);
+  L.cover = { x0: -S.pole.coverW / 2, x1: S.pole.coverW / 2, y0: 0, y1: y };
+  if (y > 0) L.chain.push([0, y, 'Pole cover']);
+  const stack = [];
+  if (S.bot.on) stack.push('bot');
+  if (S.led.on) stack.push('led');
+  if (S.top.on) stack.push('top');
+  let prevW = null;
+  stack.forEach(k => {
+    const w = k === 'led' ? ledSize().w : S[k].w, h = k === 'led' ? ledSize().h : S[k].h;
+    if (prevW !== null) {
+      const rev = k === 'top' ? S.topRev : S.botRev;
+      if (rev.on && rev.h > 0) {
+        const rw = Math.max(4, Math.min(prevW, w) - 2 * rev.recess);
+        L.parts.push({ kind: 'reveal', x0: -rw / 2, x1: rw / 2, y0: y, y1: y + rev.h });
+        L.chain.push([y, y + rev.h, 'Reveal']); y += rev.h;
+      }
+    }
+    const part = { kind: k, x0: -w / 2, x1: w / 2, y0: y, y1: y + h, w, h };
+    if (k !== 'led') cabinetGeom(part, S[k], k === 'top');
+    else L.faces.led = { w, h };
+    if (part.idPoly) { const b = bbox(part.idPoly); L.faces[k] = { w: b.x1 - b.x0, h: b.y1 - b.y0 }; }
+    L.parts.push(part); L.chain.push([y, y + h, k]);
+    y += h; prevW = w;
+  });
+  L.total = y;
+  L.maxW = Math.max(S.pole.coverW, ...L.parts.map(p => p.x1 - p.x0), 12);
+  L.lowest = L.parts.length ? L.parts[0].y0 : y;
+  return L;
+}
+function cabinetGeom(p, c, isTop) {
+  const { x0, x1, y0, y1 } = p;
+  const pk = isTop ? Math.min(Math.max(0, c.peak), (y1 - y0) * 0.6) : 0;
+  p.prof = pk > 0 ? [[x0, y0], [x1, y0], [x1, y1 - pk], [0, y1], [x0, y1 - pk]] : [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const vis = inset(p.prof, c.ret);
+  p.vis = vis;
+  if (isTop && c.copy) {
+    const n = Math.max(1, Math.min(5, Math.round(c.lines)));
+    const rbBot = y0 + c.ret, rbH = n * c.panel + (n + 1) * c.track;
+    const hb0 = rbBot + rbH, hb1 = hb0 + c.hbar;
+    p.copy = { n, rbBot, hb0, hb1, rbPoly: clipY(vis, hb0, false) };
+    const idp = clipY(vis, hb1, true);
+    p.idPoly = idp.length >= 3 && bbox(idp).y1 - bbox(idp).y0 > 0.5 ? idp : null;
+  } else p.idPoly = vis;
+}
+
+/* ---------------- Canvas ---------------- */
+const cv = document.getElementById('stage'), ctx = cv.getContext('2d');
+const wrap = document.getElementById('stageWrap');
+let dpr = 1, cssW = 800, cssH = 600;
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const r = wrap.getBoundingClientRect(); cssW = Math.max(200, r.width); cssH = Math.max(200, r.height);
+  cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr); dirty = true;
+}
+new ResizeObserver(resize).observe(wrap);
+
+function computeBase(L) {
+  if (S.view.scene === 'photo') {
+    const s0 = (cssH * S.view.size) / Math.max(L.total, 1);
+    return { s0, ox: cssW * S.view.posX, oy: cssH * S.view.posY };
+  }
+  const personIn = S.view.person ? 48 : 0;
+  const leftIn = L.maxW / 2 + personIn, spanIn = L.maxW + personIn;
+  const leftPx = 28, rightPx = S.view.dims ? 180 : 36, topPx = S.view.dims ? 64 : 36, botPx = 54;
+  const s0 = Math.max(0.05, Math.min((cssW - leftPx - rightPx) / spanIn, (cssH - topPx - botPx) / Math.max(L.total, 1)));
+  const extra = cssW - (leftPx + spanIn * s0 + rightPx);
+  return { s0, ox: leftPx + leftIn * s0 + Math.max(0, extra) / 2, oy: cssH - botPx };
+}
+const night = () => S.view.scene === 'night' || (S.view.scene === 'photo' && S.view.photoNight);
+
+function polyPath(p) { ctx.beginPath(); p.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); }
+function upright(x0, y0, h, fn) { ctx.save(); ctx.translate(x0, y0 + h); ctx.scale(1, -1); fn(); ctx.restore(); }
+function label(x, y, str, px, align = 'left', color = '#dfe5ec', weight = 500) {
+  const s = base.s0 * view.zoom;
+  ctx.save(); ctx.translate(x, y); ctx.scale(1, -1);
+  ctx.font = `${weight} ${px / s}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(str, 0, 0); ctx.restore();
+}
+
+/* ---- slot drawing (local coords: 0..w, 0..h, y down) ---- */
+function mediaSize(m) { return [m.videoWidth || m.naturalWidth || m.width || 0, m.videoHeight || m.naturalHeight || m.height || 0]; }
+function drawSlot(c, slot, w, h, t) {
+  c.fillStyle = slot.bg; c.fillRect(0, 0, w, h);
+  if (slot.type === 'media' && slot.media) {
+    const [mw, mh] = mediaSize(slot.media); if (!mw || !mh) return;
+    let dw = w, dh = h, dx = 0, dy = 0;
+    if (slot.fit !== 'stretch') {
+      const sc = slot.fit === 'cover' ? Math.max(w / mw, h / mh) : Math.min(w / mw, h / mh);
+      dw = mw * sc; dh = mh * sc; dx = (w - dw) / 2; dy = (h - dh) / 2;
+    }
+    try { c.drawImage(slot.media, dx, dy, dw, dh); } catch (e) { /* frame not ready */ }
+  } else if (slot.type === 'text') {
+    const lines = (slot.text || '').split('\n').filter((l, i, a) => l.trim().length || a.length === 1);
+    const n = Math.max(1, lines.length);
+    let fs = h / n * 0.76;
+    c.font = `800 ${fs}px ${FONT}`; c.fillStyle = slot.color; c.textBaseline = 'middle';
+    const widest = Math.max(1, ...lines.map(l => c.measureText(l).width));
+    if (slot.scroll) {
+      const off = ((t / 1000) * slot.speed * h * 0.9) % (w + widest);
+      c.textAlign = 'left'; lines.forEach((l, i) => c.fillText(l, w - off, (i + 0.54) * h / n));
+    } else {
+      if (widest > w * 0.92) { fs *= (w * 0.92) / widest; c.font = `800 ${fs}px ${FONT}`; }
+      c.textAlign = 'center'; lines.forEach((l, i) => c.fillText(l, w / 2, (i + 0.54) * h / n));
+    }
+  }
+}
+
+/* ---- LED rendering: content at true matrix resolution, then a dot mask ---- */
+const ledSrc = document.createElement('canvas'), ledCtx = ledSrc.getContext('2d');
+const ledUp = document.createElement('canvas'), upCtx = ledUp.getContext('2d');
+const tile = document.createElement('canvas');
+let tileKey = '';
+function fillLedSrc(c, slot, t) {
+  const cols = Math.max(1, Math.round(S.led.cols)), rows = Math.max(1, Math.round(S.led.rows));
+  if (c.width !== cols || c.height !== rows) { c.width = cols; c.height = rows; }
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  drawSlot(x, slot, cols, rows, t);
+}
+function drawLED(p, t) {
+  const cols = Math.max(1, Math.round(S.led.cols)), rows = Math.max(1, Math.round(S.led.rows));
+  fillLedSrc(ledSrc, slots.led, t);
+  ctx.fillStyle = '#0b0c0e'; ctx.fillRect(p.x0, p.y0, p.w, p.h);
+  const k = S.led.pitch * MM * base.s0 * view.zoom * dpr; // device px per LED pixel
+  if (k < 4) { // too small to resolve individual diodes: show the true pixel grid as flat squares
+    ctx.save(); ctx.imageSmoothingEnabled = k < 1;
+    upright(p.x0, p.y0, p.h, () => ctx.drawImage(ledSrc, 0, 0, p.w, p.h)); ctx.restore();
+  } else {
+    const kr = Math.min(18, Math.round(k)), smd = S.led.pitch <= 8;
+    const key = kr + (smd ? 's' : 'd');
+    if (key !== tileKey) {
+      tile.width = tile.height = kr; const tc = tile.getContext('2d'); tc.clearRect(0, 0, kr, kr); tc.fillStyle = '#fff';
+      if (smd) { const m = kr * 0.12; tc.beginPath(); tc.roundRect ? tc.roundRect(m, m, kr - 2 * m, kr - 2 * m, kr * 0.18) : tc.rect(m, m, kr - 2 * m, kr - 2 * m); tc.fill(); }
+      else { tc.beginPath(); tc.arc(kr / 2, kr / 2, kr * 0.42, 0, Math.PI * 2); tc.fill(); }
+      tileKey = key;
+    }
+    if (ledUp.width !== cols * kr || ledUp.height !== rows * kr) { ledUp.width = cols * kr; ledUp.height = rows * kr; }
+    upCtx.globalCompositeOperation = 'source-over'; upCtx.imageSmoothingEnabled = false;
+    upCtx.clearRect(0, 0, ledUp.width, ledUp.height);
+    upCtx.drawImage(ledSrc, 0, 0, ledUp.width, ledUp.height);
+    upCtx.globalCompositeOperation = 'destination-in';
+    upCtx.fillStyle = upCtx.createPattern(tile, 'repeat'); upCtx.fillRect(0, 0, ledUp.width, ledUp.height);
+    upCtx.globalCompositeOperation = 'source-over';
+    ctx.save(); ctx.imageSmoothingEnabled = true;
+    upright(p.x0, p.y0, p.h, () => ctx.drawImage(ledUp, 0, 0, p.w, p.h)); ctx.restore();
+  }
+  if (night() && 'filter' in ctx) { // soft bloom around lit pixels, same footprint as the board
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.28; ctx.imageSmoothingEnabled = true;
+    ctx.filter = `blur(${(6 * dpr * Math.min(view.zoom, 4)).toFixed(1)}px)`;
+    upright(p.x0, p.y0, p.h, () => ctx.drawImage(ledSrc, 0, 0, p.w, p.h)); ctx.restore();
+  }
+}
+
+/* ---- Cabinet with lit face(s) ---- */
+const ALUM = '#141518';
+function drawCabinet(p, key, t) {
+  const c = S[key], slot = slots[key];
+  ctx.fillStyle = ALUM; polyPath(p.prof); ctx.fill();
+  const s = base.s0 * view.zoom;
+  ctx.lineWidth = 1 / s; ctx.strokeStyle = night() ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.35)'; ctx.stroke();
+  const glow = night();
+  if (p.idPoly) {
+    const b = bbox(p.idPoly);
+    if (glow) { ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.55)'; ctx.shadowBlur = 26 * dpr * Math.min(2.5, view.zoom); ctx.fillStyle = slot.bg; polyPath(p.idPoly); ctx.fill(); ctx.restore(); }
+    ctx.save(); polyPath(p.idPoly); ctx.clip();
+    upright(b.x0, b.y0, b.y1 - b.y0, () => drawSlot(ctx, slot, b.x1 - b.x0, b.y1 - b.y0, t));
+    if (c.face === 'pan') panShade(b, c);
+    if (!glow) { ctx.fillStyle = 'rgba(0,0,0,.04)'; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
+    ctx.restore();
+  }
+  if (p.copy) drawCopy(p, c, glow);
+}
+function panShade(b, c) {
+  const fl = 2.5, w = b.x1 - b.x0, h = b.y1 - b.y0;
+  ctx.save(); ctx.lineWidth = Math.min(fl, w / 6, h / 6);
+  ctx.strokeStyle = 'rgba(0,0,0,.10)'; ctx.strokeRect(b.x0 + ctx.lineWidth / 2, b.y0 + ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
+  ctx.lineWidth = 0.35; ctx.strokeStyle = 'rgba(255,255,255,.55)';
+  ctx.strokeRect(b.x0 + fl + 0.5, b.y0 + fl + 0.5, Math.max(0, w - 2 * fl - 1), Math.max(0, h - 2 * fl - 1));
+  ctx.strokeStyle = 'rgba(0,0,0,.18)';
+  ctx.strokeRect(b.x0 + fl + 0.9, b.y0 + fl + 0.9, Math.max(0, w - 2 * fl - 1.8), Math.max(0, h - 2 * fl - 1.8));
+  ctx.restore();
+}
+function drawCopy(p, c, glow) {
+  const cp = p.copy, b = bbox(cp.rbPoly);
+  if (glow) { ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.5)'; ctx.shadowBlur = 22 * dpr * Math.min(2.5, view.zoom); }
+  ctx.fillStyle = '#fbfbf8'; polyPath(cp.rbPoly); ctx.fill();
+  if (glow) ctx.restore();
+  ctx.save(); polyPath(cp.rbPoly); ctx.clip();
+  ctx.fillStyle = '#8d939b';
+  for (let i = 0; i <= cp.n; i++) {
+    const ty = cp.rbBot + i * (c.panel + c.track);
+    ctx.fillRect(b.x0, ty, b.x1 - b.x0, c.track);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(b.x0, ty + c.track * 0.65, b.x1 - b.x0, c.track * 0.12); ctx.fillStyle = '#8d939b';
+  }
+  const lines = (c.copyText || '').split('\n');
+  const fs0 = c.letter / 0.7, avail = (b.x1 - b.x0) - 4;
+  for (let k = 0; k < cp.n; k++) {
+    const txt = (lines[k] || '').toUpperCase(); if (!txt.trim()) continue;
+    const cy = cp.hb0 - c.track - k * (c.panel + c.track) - c.panel / 2;
+    upright(0, cy, 0, () => {
+      ctx.font = `700 ${fs0}px ${FONT}`;
+      let fs = fs0; const w = ctx.measureText(txt).width; if (w > avail) { fs = fs0 * avail / w; ctx.font = `700 ${fs}px ${FONT}`; }
+      ctx.fillStyle = '#121316'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, 0, 0);
+    });
+  }
+  ctx.restore();
+}
+
+/* ---- Scene ---- */
+function drawBackground() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (S.view.scene === 'photo') {
+    ctx.fillStyle = '#20252c'; ctx.fillRect(0, 0, cv.width, cv.height);
+    if (photo) {
+      ctx.setTransform(dpr * view.zoom, 0, 0, dpr * view.zoom, dpr * view.panX, dpr * view.panY);
+      const [pw, ph] = mediaSize(photo), sc = Math.max(cssW / pw, cssH / ph);
+      ctx.drawImage(photo, (cssW - pw * sc) / 2, (cssH - ph * sc) / 2, pw * sc, ph * sc);
+      if (S.view.photoNight) { ctx.fillStyle = 'rgba(4,8,20,.55)'; ctx.fillRect(-1e4, -1e4, 2e4, 2e4); }
+    }
+    return;
+  }
+  const g = ctx.createLinearGradient(0, 0, 0, cv.height);
+  if (night()) { g.addColorStop(0, '#03060d'); g.addColorStop(1, '#16213a'); }
+  else { g.addColorStop(0, '#7fb0db'); g.addColorStop(1, '#dbe7ef'); }
+  ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height);
+}
+function drawGround() {
+  if (S.view.scene === 'photo') return;
+  ctx.fillStyle = night() ? '#0d1014' : '#a7a49b'; ctx.fillRect(-5e4, -5e4, 1e5, 5e4);
+  ctx.fillStyle = night() ? '#1a1e25' : '#c3c0b6'; ctx.fillRect(-5e4, -2, 1e5, 2);
+}
+function drawPerson(L) {
+  const x = -L.maxW / 2 - 30, col = night() ? '#2b313b' : '#4e5560';
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, 66, 4.6, 0, Math.PI * 2); ctx.fill();
+  const r = (x0, y0, w, h) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x0, y0, w, h, Math.min(w, h) / 2.2) : ctx.rect(x0, y0, w, h); ctx.fill(); };
+  r(x - 8, 33, 16, 27); r(x - 7, 0, 6.2, 36); r(x + 0.8, 0, 6.2, 36); r(x - 11.5, 31, 4.2, 26); r(x + 7.3, 31, 4.2, 26);
+  label(x, 76, '6 ft', 11, 'center', night() ? '#8a95a6' : '#2d333b');
+}
+const fmt = v => (Math.round(v * 100) / 100).toString();
+function ftin(v) { let f = Math.floor(v / 12), i = Math.round(v - f * 12); if (i === 12) { f++; i = 0; } return `${f}'-${i}"`; }
+function drawDims(L) {
+  const s = base.s0 * view.zoom, px = v => v / s, col = night() || S.view.scene === 'photo' ? '#f0c27a' : '#3b2a10';
+  ctx.strokeStyle = col; ctx.lineWidth = px(1);
+  const xD = L.maxW / 2 + px(22), xO = xD + px(74);
+  const tick = (x, y) => { ctx.beginPath(); ctx.moveTo(x - px(5), y); ctx.lineTo(x + px(5), y); ctx.stroke(); };
+  L.chain.forEach(([y0, y1]) => {
+    ctx.beginPath(); ctx.moveTo(xD, y0); ctx.lineTo(xD, y1); ctx.stroke(); tick(xD, y0); tick(xD, y1);
+    if ((y1 - y0) * s > 12) label(xD + px(8), (y0 + y1) / 2, `${fmt(y1 - y0)}"`, 11, 'left', col);
+  });
+  ctx.beginPath(); ctx.moveTo(xO, 0); ctx.lineTo(xO, L.total); ctx.stroke(); tick(xO, 0); tick(xO, L.total);
+  label(xO + px(8), L.total / 2 + px(8), `${fmt(L.total)}"`, 12, 'left', col, 600);
+  label(xO + px(8), L.total / 2 - px(8), ftin(L.total), 11, 'left', col);
+  const topP = L.parts[L.parts.length - 1];
+  if (topP) {
+    const y = L.total + px(20);
+    ctx.beginPath(); ctx.moveTo(topP.x0, y); ctx.lineTo(topP.x1, y); ctx.stroke();
+    [topP.x0, topP.x1].forEach(x => { ctx.beginPath(); ctx.moveTo(x, y - px(5)); ctx.lineTo(x, y + px(5)); ctx.stroke(); });
+    label(0, y + px(11), `${fmt(topP.x1 - topP.x0)}" W`, 11, 'center', col);
+  }
+}
+
+function render(t) {
+  const L = layout(); base = computeBase(L);
+  drawBackground();
+  const a = dpr * base.s0 * view.zoom;
+  ctx.setTransform(a, 0, 0, -a, dpr * (view.panX + view.zoom * base.ox), dpr * (view.panY + view.zoom * base.oy));
+  drawGround();
+  if (S.view.person && S.view.scene !== 'photo') drawPerson(L);
+  const ps = S.pole.size;
+  ctx.fillStyle = '#5b6068'; ctx.fillRect(-ps / 2, 0, ps, Math.max(L.lowest, 1));
+  if (L.cover.y1 > 0) { ctx.fillStyle = ALUM; ctx.fillRect(L.cover.x0, 0, L.cover.x1 - L.cover.x0, L.cover.y1); }
+  L.parts.forEach(p => {
+    if (p.kind === 'reveal') { ctx.fillStyle = '#26292e'; ctx.fillRect(p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0); }
+    else if (p.kind === 'led') drawLED(p, t);
+    else drawCabinet(p, p.kind, t);
+  });
+  if (S.view.dims) drawDims(L);
+  lastLayout = L;
+  dirty = false;
+}
+let lastLayout = null;
+
+function animating() {
+  return Object.entries(slots).some(([k, sl]) => SLOT_META[k].on() &&
+    ((sl.type === 'media' && sl.kind === 'video' && sl.media && !sl.media.paused) || (sl.type === 'text' && sl.scroll)));
+}
+function frame(t) {
+  if (mode === '3d' && T) frame3D(t);
+  else if (dirty || animating()) render(t);
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- Panel: specs + readout ---------------- */
+const specsEl = document.getElementById('specs'), readout = document.getElementById('readout');
+function ratio(w, h) { return h > 0 ? (w / h).toFixed(w / h >= 10 ? 0 : 1) + ' : 1' : '–'; }
+function updateInfo() {
+  const L = layout();
+  const rows = [['Overall height', `${fmt(L.total)}" (${ftin(L.total)})`]];
+  if (L.faces.top) rows.push(['Top face visible', `${fmt(L.faces.top.w)}" × ${fmt(L.faces.top.h)}"`]);
+  if (S.led.on) { const z = ledSize(); rows.push(['LED matrix', `${S.led.cols} × ${S.led.rows} px`], ['LED size', `${fmt(z.h)}" H × ${fmt(z.w)}" W`], ['Pixels per face', (S.led.cols * S.led.rows).toLocaleString()]); }
+  if (L.faces.bot) rows.push(['Bottom face visible', `${fmt(L.faces.bot.w)}" × ${fmt(L.faces.bot.h)}"`]);
+  specsEl.innerHTML = rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
+  readout.textContent = S.led.on ? `${S.led.pitch}mm · ${S.led.cols}×${S.led.rows} px · ${fmt(L.total)}" tall` : `${fmt(L.total)}" tall · ${ftin(L.total)}`;
+  const z = ledSize();
+  document.getElementById('ledHint').innerHTML = `Board is <b class="mono">${fmt(z.h)}" × ${fmt(z.w)}"</b>. Design LED content at <b class="mono">${S.led.cols} × ${S.led.rows} px</b> (${ratio(S.led.cols, S.led.rows)}); anything sharper is averaged down to the real pixel grid.`;
+  ['top', 'led', 'bot'].forEach(k => {
+    const el = document.getElementById(`size-${k}`); if (!el) return;
+    const f = L.faces[k];
+    el.textContent = k === 'led' ? `Design at ${S.led.cols} × ${S.led.rows} px (${ratio(S.led.cols, S.led.rows)})`
+      : f ? `Visible face ${fmt(f.w)}" × ${fmt(f.h)}" (${ratio(f.w, f.h)})` : (S[k].on ? 'No room left for a face' : 'Cabinet is hidden');
+    document.getElementById(`slot-${k}`).hidden = !SLOT_META[k].on();
+  });
+}
+
+/* ---------------- Slot cards ---------------- */
+function slotCard(k) {
+  const m = SLOT_META[k], sl = slots[k];
+  return `<section class="card" id="slot-${k}">
+  <header><h2>${m.title}</h2><span class="chip" id="chip-${k}"></span></header>
+  <div class="body">
+    <p class="hint mono" id="size-${k}"></p>
+    <div class="seg" role="radiogroup" aria-label="${m.title} content">
+      <input type="radio" name="type-${k}" id="type-${k}-media" value="media"><label for="type-${k}-media">Image / video</label>
+      <input type="radio" name="type-${k}" id="type-${k}-text" value="text"><label for="type-${k}-text">Text</label>
+      <input type="radio" name="type-${k}" id="type-${k}-none" value="none"><label for="type-${k}-none">Blank</label>
+    </div>
+    <div class="sub" id="media-${k}">
+      <div class="file"><input type="file" id="file-${k}" accept="image/*,video/*" aria-label="Choose an image or video for the ${m.title}"><span class="btn small">Choose image or video</span><span class="src-name" id="name-${k}"></span></div>
+      <div class="row">
+        <label class="f"><span>Fit</span><select id="fit-${k}"><option value="cover">Fill (crop)</option><option value="contain">Fit inside</option><option value="stretch">Stretch</option></select></label>
+        <label class="f"><span>Background</span><input type="color" id="bg-${k}"></label>
+      </div>
+      <button class="btn small" id="play-${k}" type="button" hidden>Pause video</button>
+    </div>
+    <div class="sub">
+      <label class="f"><span>Back face (3D view)</span>
+        <select id="backmode-${k}"><option value="same">Same as front</option><option value="own">Different image or video</option><option value="blank">Blank</option></select>
+      </label>
+      <div class="file" id="backwrap-${k}"><input type="file" id="backfile-${k}" accept="image/*,video/*" aria-label="Choose back artwork for the ${m.title}"><span class="btn small">Choose back artwork</span><span class="src-name" id="backname-${k}"></span></div>
+    </div>
+    <div class="sub" id="text-${k}">
+      <label class="f"><span>Message (Enter for a new line)</span><textarea id="txt-${k}" rows="2" spellcheck="false"></textarea></label>
+      <div class="row">
+        <label class="f"><span>Text color</span><input type="color" id="tc-${k}"></label>
+        <label class="f"><span>Background</span><input type="color" id="tbg-${k}"></label>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" id="scroll-${k}">Scroll</label>
+        <label class="f"><span>Speed</span><input type="range" id="speed-${k}" min="0.2" max="3" step="0.1"></label>
+      </div>
+    </div>
+  </div></section>`;
+}
+document.getElementById('slotCards').innerHTML = ['led', 'top', 'bot'].map(slotCard).join('');
+document.getElementById('slotCards').style.cssText = 'display:flex;flex-direction:column;gap:12px';
+
+function syncSlot(k) {
+  const sl = slots[k], $ = id => document.getElementById(id);
+  $(`type-${k}-${sl.type}`).checked = true;
+  $(`media-${k}`).hidden = sl.type !== 'media'; $(`text-${k}`).hidden = sl.type !== 'text';
+  $(`name-${k}`).textContent = sl.media ? sl.name : 'Nothing chosen yet';
+  $(`fit-${k}`).value = sl.fit; $(`bg-${k}`).value = sl.bg; $(`tbg-${k}`).value = sl.bg;
+  $(`txt-${k}`).value = sl.text; $(`tc-${k}`).value = sl.color; $(`scroll-${k}`).checked = sl.scroll; $(`speed-${k}`).value = sl.speed;
+  const isVid = sl.kind === 'video' && sl.media; $(`play-${k}`).hidden = !isVid;
+  if (isVid) $(`play-${k}`).textContent = sl.media.paused ? 'Play video' : 'Pause video';
+  $(`backmode-${k}`).value = sl.backMode; $(`backwrap-${k}`).hidden = sl.backMode !== 'own';
+  $(`backname-${k}`).textContent = sl.back.media ? sl.back.name : 'Nothing chosen yet';
+  $(`chip-${k}`).textContent = sl.type === 'media' ? (sl.kind === 'video' ? 'video' : (sl.url ? 'image' : 'sample')) : sl.type;
+}
+function loadFileInto(k, file) {
+  if (!file) return;
+  const sl = slots[k];
+  if (sl.url) URL.revokeObjectURL(sl.url);
+  if (sl.kind === 'video' && sl.media) sl.media.pause();
+  const url = URL.createObjectURL(file); sl.url = url; sl.name = file.name; sl.type = 'media';
+  if (file.type.startsWith('video')) {
+    const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', '');
+    v.src = url; v.addEventListener('loadeddata', () => { dirty = true; syncSlot(k); }); v.play().catch(() => {});
+    sl.media = v; sl.kind = 'video';
+  } else {
+    const im = new Image(); im.onload = () => { dirty = true; }; im.src = url; sl.media = im; sl.kind = 'image';
+  }
+  if (k === 'led' && sl.fit === 'contain') sl.fit = 'cover';
+  syncSlot(k); dirty = true;
+}
+['top', 'led', 'bot'].forEach(k => {
+  const sl = slots[k], $ = id => document.getElementById(id);
+  document.querySelectorAll(`input[name="type-${k}"]`).forEach(r => r.addEventListener('change', () => { sl.type = r.value; syncSlot(k); dirty = true; }));
+  $(`file-${k}`).addEventListener('change', e => { loadFileInto(k, e.target.files[0]); e.target.value = ''; });
+  $(`fit-${k}`).addEventListener('change', e => { sl.fit = e.target.value; dirty = true; });
+  const setBg = e => { sl.bg = e.target.value; syncSlot(k); dirty = true; };
+  $(`bg-${k}`).addEventListener('input', setBg); $(`tbg-${k}`).addEventListener('input', setBg);
+  $(`txt-${k}`).addEventListener('input', e => { sl.text = e.target.value; dirty = true; });
+  $(`tc-${k}`).addEventListener('input', e => { sl.color = e.target.value; dirty = true; });
+  $(`scroll-${k}`).addEventListener('change', e => { sl.scroll = e.target.checked; dirty = true; });
+  $(`speed-${k}`).addEventListener('input', e => { sl.speed = +e.target.value; });
+  $(`play-${k}`).addEventListener('click', () => { const v = sl.media; if (!v) return; v.paused ? v.play().catch(() => {}) : v.pause(); syncSlot(k); dirty = true; });
+  $(`slot-${k}`).addEventListener('click', () => select(k));
+  $(`backmode-${k}`).addEventListener('change', e => { sl.backMode = e.target.value; syncSlot(k); dirty = true; });
+  $(`backfile-${k}`).addEventListener('change', e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    const b = sl.back; if (b.url) URL.revokeObjectURL(b.url); if (b.kind === 'video' && b.media) b.media.pause();
+    b.url = URL.createObjectURL(f); b.name = f.name;
+    if (f.type.startsWith('video')) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.src = b.url; v.play().catch(() => {}); b.media = v; b.kind = 'video'; }
+    else { const im = new Image(); im.onload = () => { dirty = true; }; im.src = b.url; b.media = im; b.kind = 'image'; }
+    syncSlot(k); dirty = true;
+  });
+  syncSlot(k);
+});
+function select(k) {
+  document.querySelectorAll('#slotCards .card').forEach(c => c.classList.toggle('selected', c.id === `slot-${k}`));
+}
+
+/* ---------------- Generic bindings for dimension inputs ---------------- */
+const getP = p => p.split('.').reduce((o, k) => o[k], S);
+const setP = (p, v) => { const ks = p.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; };
+function syncInputs() {
+  document.querySelectorAll('[data-path]').forEach(el => {
+    const v = getP(el.dataset.path);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  });
+  document.getElementById('top-copytext').value = S.top.copyText;
+  document.getElementById('preset').value = S.preset;
+  document.querySelectorAll('input[name="scene"]').forEach(r => r.checked = r.value === S.view.scene);
+  S.view.isPhoto = S.view.scene === 'photo';
+  document.querySelectorAll('[data-show]').forEach(el => el.hidden = !getP(el.dataset.show));
+  updateInfo();
+}
+document.querySelectorAll('[data-path]').forEach(el => {
+  el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
+    let v;
+    if (el.type === 'checkbox') v = el.checked;
+    else if (el.type === 'number' || el.type === 'range' || el.dataset.num) { v = parseFloat(el.value); if (!isFinite(v)) return; if (el.min !== '' && v < +el.min) v = +el.min; }
+    else v = el.value;
+    setP(el.dataset.path, v);
+    document.querySelectorAll('[data-show]').forEach(x => x.hidden = !getP(x.dataset.show));
+    updateInfo(); dirty = true;
+  });
+});
+document.getElementById('top-copytext').addEventListener('input', e => { S.top.copyText = e.target.value; dirty = true; });
+function applyPreset(key) {
+  const fresh = BASE(); PRESETS[key](fresh);
+  S.double = fresh.double;
+  ['top', 'topRev', 'led', 'botRev', 'bot', 'pole'].forEach(k => {
+    const keep = k === 'top' ? { copyText: S.top.copyText } : {};
+    S[k] = Object.assign(fresh[k], keep);
+  });
+  S.preset = key; fit(); syncInputs(); dirty = true;
+}
+document.getElementById('preset').addEventListener('change', e => applyPreset(e.target.value));
+document.getElementById('resetPreset').addEventListener('click', () => applyPreset(S.preset));
+document.querySelectorAll('input[name="scene"]').forEach(r => r.addEventListener('change', () => {
+  S.view.scene = r.value; S.view.isPhoto = r.value === 'photo';
+  document.querySelectorAll('[data-show]').forEach(x => x.hidden = !getP(x.dataset.show));
+  fit(); dirty = true;
+}));
+document.getElementById('photoFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const im = new Image(); im.onload = () => { photo = im; dirty = true; }; im.src = URL.createObjectURL(f);
+  document.getElementById('photoName').textContent = f.name;
+});
+
+/* ---------------- View: zoom, pan, drop, snapshot ---------------- */
+const zoomRead = document.getElementById('zoomRead');
+function setZoom(z, cx = cssW / 2, cy = cssH / 2) {
+  z = Math.min(40, Math.max(0.3, z));
+  view.panX = cx - (cx - view.panX) * (z / view.zoom); view.panY = cy - (cy - view.panY) * (z / view.zoom);
+  view.zoom = z; zoomRead.textContent = Math.round(z * 100) + '%'; dirty = true;
+}
+function fit() { view.zoom = 1; view.panX = 0; view.panY = 0; if (mode === '3d') { needFit3 = true; zoomRead.textContent = '3D'; } else zoomRead.textContent = '100%'; dirty = true; }
+document.getElementById('zoomIn').addEventListener('click', () => mode === '3d' ? dolly(1 / 1.35) : setZoom(view.zoom * 1.4));
+document.getElementById('zoomOut').addEventListener('click', () => mode === '3d' ? dolly(1.35) : setZoom(view.zoom / 1.4));
+document.getElementById('zoomFit').addEventListener('click', () => mode === '3d' ? fit3D('34') : fit());
+document.getElementById('zoomLed').addEventListener('click', () => {
+  if (mode === '3d') { led3D(); return; }
+  const L = layout(); base = computeBase(L);
+  const p = L.parts.find(q => q.kind === 'led') || L.parts[L.parts.length - 1]; if (!p) return;
+  fit();
+  const z = Math.min(40, (cssW * 0.9) / ((p.w * 0.35) * base.s0));
+  const wx = p.x0 + p.w * 0.2, wy = (p.y0 + p.y1) / 2;
+  view.zoom = z; view.panX = cssW * 0.08 - z * (base.ox + wx * base.s0); view.panY = cssH / 2 - z * (base.oy - wy * base.s0);
+  zoomRead.textContent = Math.round(z * 100) + '%'; dirty = true;
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault(); const r = cv.getBoundingClientRect();
+  setZoom(view.zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, px: view.panX, py: view.panY, moved: false }; cv.setPointerCapture(e.pointerId); cv.classList.add('dragging'); });
+cv.addEventListener('pointermove', e => {
+  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+  view.panX = drag.px + dx; view.panY = drag.py + dy; dirty = true;
+});
+cv.addEventListener('pointerup', e => {
+  cv.classList.remove('dragging');
+  if (drag && !drag.moved) { const k = hit(e); if (k) { select(k); document.getElementById(`slot-${k}`).scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
+  drag = null;
+});
+function toWorld(e) {
+  const r = cv.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
+  return [((sx - view.panX) / view.zoom - base.ox) / base.s0, (base.oy - (sy - view.panY) / view.zoom) / base.s0];
+}
+function hit(e) {
+  if (!lastLayout) return null; const [x, y] = toWorld(e);
+  const p = lastLayout.parts.find(q => q.kind !== 'reveal' && x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+  return p ? p.kind : null;
+}
+const dropNote = document.getElementById('dropNote');
+wrap.addEventListener('dragover', e => { e.preventDefault(); dropNote.hidden = false; });
+wrap.addEventListener('dragleave', e => { if (!wrap.contains(e.relatedTarget)) dropNote.hidden = true; });
+wrap.addEventListener('drop', e => {
+  e.preventDefault(); dropNote.hidden = true;
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const k = (mode === '3d' ? pick3D(e) : hit(e)) || (S.led.on ? 'led' : 'top');
+  loadFileInto(k, f); select(k);
+});
+const modal = document.getElementById('snapModal');
+document.getElementById('snap').addEventListener('click', () => {
+  if (mode === '3d') render3D(); else render(performance.now());
+  try { document.getElementById('snapImg').src = (mode === '3d' ? cv3 : cv).toDataURL('image/png'); modal.hidden = false; }
+  catch (err) { document.getElementById('snapTitle').textContent = 'Snapshot unavailable for this content'; modal.hidden = false; }
+});
+document.getElementById('snapClose').addEventListener('click', () => modal.hidden = true);
+modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.hidden = true; });
+
+/* ================= 3D view (three.js) ================= */
+const cv3 = document.getElementById('stage3d'), note3d = document.getElementById('note3d');
+let mode = '2d', T = null, sig3 = '', texDirty = true, needFit3 = true;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const slotAnim = sl => (sl.type === 'media' && sl.kind === 'video' && sl.media && !sl.media.paused) || (sl.type === 'text' && sl.scroll);
+
+function gradientTex(top, bottom) {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+  const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, top); g.addColorStop(1, bottom); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+  return new THREE.CanvasTexture(c);
+}
+function init3D() {
+  const r = new THREE.WebGLRenderer({ canvas: cv3, antialias: true, preserveDrawingBuffer: true });
+  r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(35, 1, 2, 60000);
+  const hemi = new THREE.HemisphereLight(0xeef3f8, 0x5d5a52, 0.9);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005;
+  const glow = new THREE.PointLight(0xfff2dd, 0, 0);
+  scene.add(hemi, sun, sun.target, glow);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0xa7a49b, roughness: 1, metalness: 0 });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60000, 60000), groundMat);
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.receiveShadow = true; scene.add(ground);
+  const group = new THREE.Group(); scene.add(group);
+  T = { r, scene, cam, hemi, sun, glow, ground, group, faces: [],
+        skyDay: gradientTex('#7fb0db', '#dbe7ef'), skyNight: gradientTex('#03060d', '#16213a'),
+        orbit: { theta: -0.6, phi: 1.4, radius: 600, target: new THREE.Vector3() },
+        ray: new THREE.Raycaster(), maxAniso: r.capabilities.getMaxAnisotropy() };
+}
+function shapeOf(poly) { const sh = new THREE.Shape(); poly.forEach((q, i) => i ? sh.lineTo(q[0], q[1]) : sh.moveTo(q[0], q[1])); return sh; }
+function faceGeo(poly) {
+  const g = new THREE.ShapeGeometry(shapeOf(poly)), b = bbox(poly), pos = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) - b.x0) / (b.x1 - b.x0), (pos.getY(i) - b.y0) / (b.y1 - b.y0));
+  uv.needsUpdate = true; return g;
+}
+function makeTex(w, h, ppi) {
+  const sc = Math.min(ppi, 2048 / Math.max(w, h)), c = document.createElement('canvas');
+  c.width = Math.max(2, Math.round(w * sc)); c.height = Math.max(2, Math.round(h * sc));
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = T.maxAniso;
+  return { canvas: c, tex };
+}
+function clearGroup() {
+  T.group.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+  });
+  T.group.clear(); T.faces = [];
+}
+function sideSlot(key, back) {
+  const sl = slots[key];
+  if (!back || sl.backMode === 'same') return sl;
+  if (sl.backMode === 'blank' || !sl.back.media) return Object.assign({}, sl, { type: 'none' });
+  return Object.assign({}, sl, { type: 'media', media: sl.back.media, kind: sl.back.kind });
+}
+function build3D() {
+  clearGroup();
+  const L = layout(), ps = S.pole.size;
+  const alum = new THREE.MeshStandardMaterial({ color: 0x1b1c20, metalness: 0.35, roughness: 0.55 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x6b7078, metalness: 0.6, roughness: 0.4 });
+  const revealMat = new THREE.MeshStandardMaterial({ color: 0x2c2f35, roughness: 0.7 });
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; T.group.add(m); return m; };
+  const depthOf = k => Math.max(ps + 3, k === 'led' ? S.led.d : S[k].d);
+  const lowest = Math.max(L.lowest, 1);
+  add(new THREE.BoxGeometry(ps, lowest, ps), steel, 0, lowest / 2, 0);
+  if (L.cover.y1 > 0) add(new THREE.BoxGeometry(Math.max(1, S.pole.coverW), L.cover.y1, Math.max(1, S.pole.coverD)), alum, 0, L.cover.y1 / 2, 0);
+  const sides = S.double ? [1, -1] : [1];
+  L.parts.forEach((p, i) => {
+    if (p.kind === 'reveal') {
+      const nb = [L.parts[i - 1], L.parts[i + 1]].filter(q => q && q.kind !== 'reveal').map(q => depthOf(q.kind));
+      add(new THREE.BoxGeometry(p.x1 - p.x0, p.y1 - p.y0, Math.max(ps + 2, Math.min(...nb) - 2)), revealMat, 0, (p.y0 + p.y1) / 2, 0);
+      return;
+    }
+    const d = depthOf(p.kind);
+    if (p.kind === 'led') {
+      add(new THREE.BoxGeometry(p.w, p.h, d), alum, 0, (p.y0 + p.y1) / 2, 0);
+      sides.forEach(sd => {
+        const src = document.createElement('canvas');
+        const cols = Math.max(1, Math.round(S.led.cols)), kr = Math.max(2, Math.min(6, Math.floor(4096 / cols)));
+        const dot = document.createElement('canvas'); dot.width = cols * kr; dot.height = Math.max(1, Math.round(S.led.rows)) * kr;
+        const tex = new THREE.CanvasTexture(dot); tex.anisotropy = T.maxAniso;
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.h), new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(1.35, 1.35, 1.35) }));
+        m.position.set(0, (p.y0 + p.y1) / 2, sd * (d / 2 + 0.08)); if (sd < 0) m.rotation.y = Math.PI;
+        m.userData.key = 'led'; T.group.add(m);
+        T.faces.push({ kind: 'led', key: 'led', back: sd < 0, src, canvas: dot, kr, tex });
+      });
+    } else {
+      const g = new THREE.ExtrudeGeometry(shapeOf(p.prof), { depth: d, bevelEnabled: false }); g.translate(0, 0, -d / 2);
+      add(g, alum, 0, 0, 0);
+      const c = S[p.kind];
+      sides.forEach(sd => {
+        const placeFace = (poly, mat, key) => {
+          const m = new THREE.Mesh(faceGeo(poly), mat);
+          m.position.z = sd * (d / 2 + 0.08); if (sd < 0) m.rotation.y = Math.PI;
+          m.userData.key = key; T.group.add(m); return m;
+        };
+        if (p.idPoly) {
+          const b = bbox(p.idPoly), { canvas, tex } = makeTex(b.x1 - b.x0, b.y1 - b.y0, 16);
+          placeFace(p.idPoly, new THREE.MeshBasicMaterial({ map: tex }), p.kind);
+          T.faces.push({ kind: 'face', key: p.kind, back: sd < 0, canvas, tex, pan: c.face === 'pan', b });
+        }
+        if (p.copy) {
+          const b = bbox(p.copy.rbPoly), { canvas, tex } = makeTex(b.x1 - b.x0, b.y1 - b.y0, 18);
+          placeFace(p.copy.rbPoly, new THREE.MeshBasicMaterial({ map: tex }), p.kind);
+          T.faces.push({ kind: 'copy', key: p.kind, canvas, tex, p, c, b });
+        }
+        // retainer lip: a thin frame proud of the face
+        const lip = new THREE.Shape(); p.prof.forEach((q, j) => j ? lip.lineTo(q[0], q[1]) : lip.moveTo(q[0], q[1]));
+        const hole = new THREE.Path(); p.vis.slice().reverse().forEach((q, j) => j ? hole.lineTo(q[0], q[1]) : hole.moveTo(q[0], q[1]));
+        lip.holes.push(hole);
+        const lg = new THREE.ExtrudeGeometry(lip, { depth: 0.5, bevelEnabled: false });
+        const lm = add(lg, alum, 0, 0, sd > 0 ? d / 2 : -d / 2 - 0.5);
+        lm.castShadow = false;
+      });
+    }
+  });
+  if (S.view.person) {
+    const pm = new THREE.MeshStandardMaterial({ color: 0x59606b, roughness: 0.8 }), x = -L.maxW / 2 - 30, z = 0;
+    add(new THREE.SphereGeometry(4.6, 20, 14), pm, x, 66, z);
+    add(new THREE.CylinderGeometry(7, 6, 28, 18), pm, x, 46, z);
+    [-3.8, 3.8].forEach(dx => add(new THREE.CylinderGeometry(3, 2.6, 34, 12), pm, x + dx, 17, z));
+    [-9.6, 9.6].forEach(dx => add(new THREE.CylinderGeometry(2, 1.8, 26, 10), pm, x + dx, 45, z));
+  }
+  const span = Math.max(L.total, L.maxW) * 1.3, sc = T.sun.shadow.camera;
+  sc.left = -span; sc.right = span; sc.top = span; sc.bottom = -span; sc.near = 1; sc.far = span * 8; sc.updateProjectionMatrix();
+  T.sun.position.set(span * 0.9, span * 2.2, span * 1.6); T.sun.target.position.set(0, L.total / 2, 0);
+  T.glow.position.set(0, L.total * 0.7, Math.max(L.maxW, 60) * 0.9);
+  T.L = L; texDirty = true;
+}
+function drawCopyTex(f) {
+  const { canvas, p, c, b } = f, x = canvas.getContext('2d'), k = canvas.width / (b.x1 - b.x0), cp = p.copy;
+  const Y = wy => (b.y1 - wy) * k;
+  x.fillStyle = '#fbfbf8'; x.fillRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i <= cp.n; i++) {
+    const ty = cp.rbBot + i * (c.panel + c.track);
+    x.fillStyle = '#8d939b'; x.fillRect(0, Y(ty + c.track), canvas.width, c.track * k);
+    x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(0, Y(ty + c.track * 0.77), canvas.width, c.track * 0.12 * k);
+  }
+  const lines = (c.copyText || '').split('\n'), fs0 = c.letter / 0.7 * k, avail = canvas.width - 4 * k;
+  x.fillStyle = '#121316'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (let i = 0; i < cp.n; i++) {
+    const txt = (lines[i] || '').toUpperCase(); if (!txt.trim()) continue;
+    x.font = `700 ${fs0}px ${FONT}`; let fs = fs0; const w = x.measureText(txt).width;
+    if (w > avail) { fs = fs0 * avail / w; x.font = `700 ${fs}px ${FONT}`; }
+    x.fillText(txt, canvas.width / 2, Y(cp.hb0 - c.track - i * (c.panel + c.track) - c.panel / 2));
+  }
+}
+function dotify(src, dst, kr) {
+  const x = dst.getContext('2d'), cols = src.width, rows = src.height;
+  if (dst.width !== cols * kr || dst.height !== rows * kr) { dst.width = cols * kr; dst.height = rows * kr; }
+  x.globalCompositeOperation = 'source-over'; x.imageSmoothingEnabled = false;
+  x.clearRect(0, 0, dst.width, dst.height); x.drawImage(src, 0, 0, dst.width, dst.height);
+  const t = document.createElement('canvas'); t.width = t.height = kr; const tc = t.getContext('2d'); tc.fillStyle = '#fff';
+  const m = kr * 0.1; tc.beginPath(); tc.roundRect ? tc.roundRect(m, m, kr - 2 * m, kr - 2 * m, kr * 0.3) : tc.rect(m, m, kr - 2 * m, kr - 2 * m); tc.fill();
+  x.globalCompositeOperation = 'destination-in'; x.fillStyle = x.createPattern(t, 'repeat'); x.fillRect(0, 0, dst.width, dst.height);
+  x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#0b0c0e'; x.fillRect(0, 0, dst.width, dst.height);
+  x.globalCompositeOperation = 'source-over';
+}
+function update3DTex(t) {
+  T.faces.forEach(f => {
+    if (f.kind === 'copy') { if (!f.drawn || texDirty) { drawCopyTex(f); f.drawn = true; f.tex.needsUpdate = true; } return; }
+    const sl = sideSlot(f.key, f.back);
+    if (!texDirty && !slotAnim(sl)) return;
+    if (f.kind === 'face') {
+      const x = f.canvas.getContext('2d'); x.imageSmoothingEnabled = true;
+      drawSlot(x, sl, f.canvas.width, f.canvas.height, t);
+      if (f.pan) { // pan-face flange shading
+        const k = f.canvas.width / (f.b.x1 - f.b.x0), fl = 2.5 * k;
+        x.strokeStyle = 'rgba(0,0,0,.12)'; x.lineWidth = fl; x.strokeRect(fl / 2, fl / 2, f.canvas.width - fl, f.canvas.height - fl);
+      }
+    } else { fillLedSrc(f.src, sl, t); dotify(f.src, f.canvas, f.kr); }
+    f.tex.needsUpdate = true;
+  });
+  texDirty = false;
+}
+function layoutSig() { return JSON.stringify([S.double, S.top, S.topRev, S.led, S.botRev, S.bot, S.pole, S.view.person]); }
+function placeCam() {
+  const o = T.orbit, sp = Math.sin(o.phi);
+  T.cam.position.set(o.target.x + o.radius * sp * Math.sin(o.theta), o.target.y + o.radius * Math.cos(o.phi), o.target.z + o.radius * sp * Math.cos(o.theta));
+  T.cam.lookAt(o.target);
+}
+function fit3D(v = '34') {
+  if (!T) return; const L = T.L || layout(), o = T.orbit, aspect = cssW / cssH, fov = T.cam.fov * Math.PI / 180;
+  o.target.set(0, L.total * 0.5, 0);
+  o.theta = { front: 0, '34': -0.62, back: Math.PI }[v]; o.phi = 1.42;
+  const wNeed = (L.maxW + (S.view.person ? 70 : 0)) * 1.25, hNeed = L.total * 1.2;
+  o.radius = Math.max(hNeed, wNeed / aspect) / (2 * Math.tan(fov / 2)) + Math.max(S.top.d, S.led.d, 12);
+}
+function led3D() {
+  if (!T || !T.L) return;
+  const p = T.L.parts.find(q => q.kind === 'led') || T.L.parts[T.L.parts.length - 1]; if (!p) return;
+  const o = T.orbit, fov = T.cam.fov * Math.PI / 180, aspect = cssW / cssH;
+  o.target.set(p.x0 + p.w * 0.25, (p.y0 + p.y1) / 2, 0); o.theta = -0.12; o.phi = Math.PI / 2 - 0.02;
+  o.radius = (p.w * 0.35) / (2 * Math.tan(fov / 2) * aspect) + S.led.d;
+}
+function dolly(f) { if (T) T.orbit.radius = clamp(T.orbit.radius * f, 15, 30000); }
+function render3D() {
+  const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+  if (cv3.width !== w || cv3.height !== h) { T.r.setPixelRatio(dpr); T.r.setSize(cssW, cssH, false); T.cam.aspect = cssW / cssH; T.cam.updateProjectionMatrix(); }
+  const n = S.view.scene === 'night' || (S.view.scene === 'photo' && S.view.photoNight);
+  T.scene.background = n ? T.skyNight : T.skyDay;
+  T.ground.material.color.setHex(n ? 0x101318 : 0xa7a49b);
+  T.hemi.intensity = n ? 0.12 : 0.9; T.sun.intensity = n ? 0.05 : 0.75; T.glow.intensity = n ? 0.9 : 0;
+  placeCam(); T.r.render(T.scene, T.cam);
+}
+function frame3D(t) {
+  const sg = layoutSig();
+  if (sg !== sig3) { sig3 = sg; build3D(); }
+  if (needFit3) { fit3D('34'); needFit3 = false; }
+  if (dirty) { texDirty = true; dirty = false; }
+  update3DTex(t); render3D();
+}
+function pick3D(e) {
+  if (!T) return null;
+  const r = cv3.getBoundingClientRect();
+  T.ray.setFromCamera({ x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }, T.cam);
+  const h = T.ray.intersectObjects(T.group.children, false).find(i => i.object.userData.key);
+  return h ? h.object.userData.key : null;
+}
+function setMode(m) {
+  if (m === '3d' && !window.THREE) {
+    document.getElementById('mode-2d').checked = true;
+    note3d.textContent = "3D needs the three.js library, which didn't load. Check the internet connection and reload."; note3d.hidden = false;
+    return;
+  }
+  mode = m; cv.hidden = m === '3d'; cv3.hidden = m !== '3d';
+  document.getElementById('views3d').hidden = m !== '3d';
+  if (m === '3d') { if (!T) init3D(); sig3 = ''; needFit3 = true; texDirty = true; zoomRead.textContent = '3D'; }
+  else { zoomRead.textContent = Math.round(view.zoom * 100) + '%'; dirty = true; }
+  updateNote();
+}
+function updateNote() {
+  const show = mode === '3d' && S.view.scene === 'photo';
+  note3d.textContent = 'Site photo placement is a 2D feature. 3D shows the sign in a plain scene.';
+  note3d.hidden = !show;
+}
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => setMode(r.value)));
+document.querySelectorAll('#views3d [data-view]').forEach(b => b.addEventListener('click', () => fit3D(b.dataset.view)));
+document.querySelectorAll('input[name="scene"]').forEach(r => r.addEventListener('change', updateNote));
+let d3 = null;
+cv3.addEventListener('pointerdown', e => { d3 = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey, moved: false }; cv3.setPointerCapture(e.pointerId); cv3.style.cursor = 'grabbing'; });
+cv3.addEventListener('pointermove', e => {
+  if (!d3 || !T) return; const dx = e.clientX - d3.x, dy = e.clientY - d3.y; d3.x = e.clientX; d3.y = e.clientY;
+  if (Math.abs(dx) + Math.abs(dy) > 1) d3.moved = true;
+  const o = T.orbit;
+  if (d3.pan) {
+    const k = o.radius * 0.0015, right = new THREE.Vector3().setFromMatrixColumn(T.cam.matrix, 0), up = new THREE.Vector3().setFromMatrixColumn(T.cam.matrix, 1);
+    o.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+  } else { o.theta -= dx * 0.006; o.phi = clamp(o.phi - dy * 0.006, 0.2, 1.62); }
+});
+cv3.addEventListener('pointerup', e => {
+  cv3.style.cursor = '';
+  if (d3 && !d3.moved) { const k = pick3D(e); if (k) { select(k); document.getElementById(`slot-${k}`).scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
+  d3 = null;
+});
+cv3.addEventListener('contextmenu', e => e.preventDefault());
+cv3.addEventListener('wheel', e => { e.preventDefault(); dolly(Math.exp(e.deltaY * 0.0012)); }, { passive: false });
+
+/* ---------------- Boot ---------------- */
+makeSamples(); syncInputs(); ['top', 'led', 'bot'].forEach(syncSlot); select('led'); resize();
+if (document.fonts && document.fonts.load) {
+  Promise.all([document.fonts.load(`800 40px "Barlow Condensed"`), document.fonts.load(`700 40px "Barlow Condensed"`)])
+    .then(() => { makeSamples(); dirty = true; }).catch(() => {});
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

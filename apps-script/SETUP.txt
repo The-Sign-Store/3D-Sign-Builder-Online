@@ -1,0 +1,26 @@
+3D SIGN BUILDER - GOOGLE APPS SCRIPT SETUP (about 5 minutes)
+
+1. Go to https://script.google.com and click "New project".
+2. Rename the project (top left) to "3D Sign Builder".
+3. Code.gs: select everything in the editor and paste in the contents of Code.gs.
+4. Click the "+" next to Files > HTML, name it exactly:  Index
+   (Apps Script adds .html itself). Replace its contents with Index.html.
+5. Click the disk icon to save.
+6. Click Deploy > New deployment > gear icon > "Web app".
+     Description:   3D Sign Builder v1
+     Execute as:    Me
+     Who has access: "Anyone within <your domain>" for staff only,
+                     or "Anyone" for customers.
+   Click Deploy and authorize when asked. Copy the web app URL.
+7. Open the URL. To embed it in Google Sites: Insert > Embed > By URL.
+
+UPDATING: after changing Index.html, use Deploy > Manage deployments >
+edit (pencil) > Version: "New version" > Deploy. The URL stays the same.
+
+NOTES
+- Uploaded images/videos stay in the visitor's browser; nothing is stored in Google.
+- Video support depends on the browser: MP4 (H.264) and WebM work in Chrome,
+  Edge, Firefox and Safari. MOV files from iPhones usually work in Safari only.
+- Snapshot opens a PNG you can right-click > Save image as (works in 2D and 3D).
+- The 3D view loads the three.js library from cdn.jsdelivr.net. If your network
+  blocks that site, the 2D view still works and the 3D button explains why.
