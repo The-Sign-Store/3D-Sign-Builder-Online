@@ -56,7 +56,7 @@ and commit the source together with both generated files.
 
 ## Branding
 
-Google-style dark interface with The Sign Store branding: the logo on a solid brand-red app bar, brand yellow for selected controls and focus, brand red for primary actions (Share). The logo is embedded in the page, so no image files need hosting.
+Google-style dark interface with The Sign Store branding: the logo on a solid deep-red app bar, brand yellow for selected controls and focus, deep red for primary actions (Share). The red is #9B111E, chosen to meet WCAG AAA contrast with both the brand yellow #FFF200 (7.20:1) and white (8.42:1) text. The logo is embedded in the page, so no image files need hosting.
 
 ## Dependencies
 
