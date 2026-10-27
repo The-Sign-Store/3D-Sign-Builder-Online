@@ -63,7 +63,7 @@ Google-style dark interface with The Sign Store branding: the logo on a solid de
 All loaded from CDNs at runtime; there is nothing to install:
 
 - [three.js](https://threejs.org/) 0.147.0 (jsDelivr) for the 3D view. If it can't load, the 2D view still works and the 3D button says why.
-- Google Fonts: Roboto and Roboto Mono for the interface, Barlow Condensed for lettering drawn on the signs (system fonts are used as a fallback).
+- Google Fonts: Outfit Bold for the app title, Roboto and Roboto Mono for the interface, Barlow Condensed for lettering drawn on the signs (system fonts are used as a fallback).
 
 ## Notes and limits
 
