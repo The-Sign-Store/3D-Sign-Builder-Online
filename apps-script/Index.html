@@ -176,6 +176,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
             <option value="CC_C">CC-C · 5' x 8' peak roof changeable copy</option>
             <option value="LED_A">LED-A · 24" x 85" + 10mm LED</option>
             <option value="LED_B">LED-B · 24" x 75" + 10mm LED</option>
+            <optgroup label="Demo trailers">
+              <option value="VANTAGE_T3">Vantage Demo Trailer 3 · 480 x 240 px</option>
+              <option value="MEDIA_T12">Media Display Demo Trailer · 12mm · 400 x 240 px</option>
+            </optgroup>
           </select>
         </label>
         <label class="toggle"><input type="checkbox" id="dbl" data-path="double">Double-sided (back face shows in 3D)</label>
@@ -262,14 +266,23 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     </section>
 
     <section class="card">
-      <header><h2>Pole &amp; cover</h2></header>
+      <header><h2>Base</h2></header>
       <div class="body">
-        <div class="row three">
+        <div class="seg" role="radiogroup" aria-label="Base type">
+          <input type="radio" name="base" id="base-pole" value="pole"><label for="base-pole">Pole + cover</label>
+          <input type="radio" name="base" id="base-trailer" value="trailer"><label for="base-trailer">Mobile trailer</label>
+        </div>
+        <div class="row three" data-show="pole.trailer">
+          <label class="f"><span>Trailer length in</span><input id="tr-len" type="number" min="96" step="6" data-path="trailer.len"></label>
+          <label class="f"><span>Screen bottom in</span><input id="tr-clear" type="number" min="60" step="1" data-path="trailer.clear"></label>
+          <label class="f"><span>Trailer width in</span><input id="tr-w" type="number" min="60" max="102" step="1" data-path="trailer.width"></label>
+        </div>
+        <div class="row three" data-hide="pole.trailer">
           <label class="f"><span>Cover W in</span><input id="pole-cw" type="number" min="0" step="1" data-path="pole.coverW"></label>
           <label class="f"><span>Cover H in</span><input id="pole-ch" type="number" min="0" step="1" data-path="pole.coverH"></label>
           <label class="f"><span>Cover D in</span><input id="pole-cd" type="number" min="1" step="1" data-path="pole.coverD"></label>
         </div>
-        <div class="row">
+        <div class="row" data-hide="pole.trailer">
           <label class="f"><span>Steel pole</span>
             <select id="pole-size" data-path="pole.size" data-num="1">
               <option value="3">3 x 3</option><option value="4">4 x 4</option><option value="6">6 x 6</option><option value="8">8 x 8</option><option value="10">10 x 10</option><option value="12">12 x 12</option>
@@ -357,7 +370,8 @@ const BASE = () => ({
   led:   { on: false, pitch: 10, cols: 192, rows: 72, d: 12 },
   botRev:{ on: false, h: 2, recess: 1 },
   bot:   { on: false, w: 100, h: 20, d: 12, ret: 2, face: 'flat' },
-  pole:  { size: 6, coverW: 46, coverH: 60, coverD: 12 },
+  pole:  { size: 6, coverW: 46, coverH: 60, coverD: 12, trailer: false },
+  trailer: { len: 168, clear: 84, width: 90 },
 });
 const PRESETS = {
   PYLON: s => { Object.assign(s.top, { w: 100, h: 30, d: 18, face: 'pan', peak: 0, copy: false });
@@ -368,6 +382,11 @@ const PRESETS = {
   CC_B:  s => { Object.assign(s.top, { w: 96, h: 60, copy: true }); },
   CC_C:  s => { Object.assign(s.top, { w: 96, h: 60, copy: true, peak: 14 }); },
   LED_A: s => { Object.assign(s.top, { w: 85, h: 24 }); Object.assign(s.led, { on: true, pitch: 10, cols: 216, rows: 72 }); },
+  // Demo trailers: single-sided screens on a mast. Matrix is width x height in px.
+  VANTAGE_T3: s => { s.top.on = false; s.double = false; s.pole.trailer = true;
+                     Object.assign(s.led, { on: true, pitch: 10, cols: 480, rows: 240, d: 8 }); },
+  MEDIA_T12:  s => { s.top.on = false; s.double = false; s.pole.trailer = true;
+                     Object.assign(s.led, { on: true, pitch: 12, cols: 400, rows: 240, d: 8 }); },
   LED_B: s => { Object.assign(s.top, { w: 75, h: 24 }); Object.assign(s.led, { on: true, pitch: 10, cols: 192, rows: 72 });
                 s.pole.coverW = 34; },
 };
@@ -469,12 +488,15 @@ function clipY(poly, c, above) {
 const bbox = p => { const xs = p.map(q => q[0]), ys = p.map(q => q[1]); return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
 
 /* ---------------- Layout (world inches, y up, x centred on pole) ---------------- */
+const TRAILER_DECK = 46, TRAILER_TONGUE = 54, WHEEL_R = 14.5;
 function ledSize() { return { w: S.led.cols * S.led.pitch * MM, h: S.led.rows * S.led.pitch * MM }; }
 function layout() {
   const L = { parts: [], faces: {}, chain: [] };
-  let y = Math.max(0, S.pole.coverH);
-  L.cover = { x0: -S.pole.coverW / 2, x1: S.pole.coverW / 2, y0: 0, y1: y };
-  if (y > 0) L.chain.push([0, y, 'Pole cover']);
+  const tr = S.pole.trailer;
+  let y = tr ? Math.max(TRAILER_DECK + 6, S.trailer.clear) : Math.max(0, S.pole.coverH);
+  L.trailer = tr;
+  L.cover = { x0: -S.pole.coverW / 2, x1: S.pole.coverW / 2, y0: 0, y1: tr ? 0 : y };
+  if (y > 0) L.chain.push([0, y, tr ? 'Clearance' : 'Pole cover']);
   const stack = [];
   if (S.bot.on) stack.push('bot');
   if (S.led.on) stack.push('led');
@@ -498,7 +520,7 @@ function layout() {
     y += h; prevW = w;
   });
   L.total = y;
-  L.maxW = Math.max(S.pole.coverW, ...L.parts.map(p => p.x1 - p.x0), 12);
+  L.maxW = Math.max(tr ? S.trailer.len + 2 * TRAILER_TONGUE : S.pole.coverW, ...L.parts.map(p => p.x1 - p.x0), 12);
   L.lowest = L.parts.length ? L.parts[0].y0 : y;
   return L;
 }
@@ -710,6 +732,23 @@ function drawGround() {
   ctx.fillStyle = night() ? '#0d1014' : '#a7a49b'; ctx.fillRect(-5e4, -5e4, 1e5, 5e4);
   ctx.fillStyle = night() ? '#1a1e25' : '#c3c0b6'; ctx.fillRect(-5e4, -2, 1e5, 2);
 }
+function drawTrailer(L) {
+  const len = S.trailer.len, x0 = -len / 2, x1 = len / 2, n = night();
+  const body = n ? '#1d2027' : '#2b2f36', steel = n ? '#2a2e35' : '#5b6068', tire = '#0c0d0f', hub = n ? '#4a505a' : '#9aa1ab';
+  ctx.fillStyle = steel; ctx.fillRect(-4, TRAILER_DECK, 8, Math.max(0, L.lowest - TRAILER_DECK));            // mast
+  ctx.fillRect(-10, L.lowest - 3, 20, 3);                                                                  // mast head plate
+  ctx.beginPath(); ctx.moveTo(x0, 22); ctx.lineTo(x0 - TRAILER_TONGUE + 6, 25); ctx.lineTo(x0 - TRAILER_TONGUE + 6, 29); ctx.lineTo(x0, 34); ctx.fill(); // tongue
+  ctx.fillRect(x0 - TRAILER_TONGUE, 23, 10, 7);                                                             // coupler
+  ctx.fillRect(x0 - TRAILER_TONGUE + 14, 0, 3, 26); ctx.fillRect(x0 - TRAILER_TONGUE + 10, 0, 11, 2);       // tongue jack
+  [x0 + 10, x1 - 13].forEach(x => { ctx.fillRect(x, 2, 3, 18); ctx.fillRect(x - 5, 0, 13, 2); });           // stabiliser jacks
+  ctx.fillStyle = body; ctx.fillRect(x0, 18, len, TRAILER_DECK - 18);                                       // chassis / generator box
+  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(x0, TRAILER_DECK - 3, len, 3);
+  ctx.fillStyle = n ? '#111317' : '#22252b'; ctx.fillRect(-30, 22, 60, 16);                                 // fender skirt
+  [-17, 17].forEach(cx => {
+    ctx.fillStyle = tire; ctx.beginPath(); ctx.arc(cx, WHEEL_R, WHEEL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hub; ctx.beginPath(); ctx.arc(cx, WHEEL_R, WHEEL_R * 0.45, 0, Math.PI * 2); ctx.fill();
+  });
+}
 function drawPerson(L) {
   const x = -L.maxW / 2 - 30, img = personTint(night() ? '#3a4250' : '#1d2026');
   if (img) upright(x - PERSON_W / 2, 0, PERSON_H, () => ctx.drawImage(img, 0, 0, PERSON_W, PERSON_H));
@@ -745,9 +784,12 @@ function render(t) {
   ctx.setTransform(a, 0, 0, -a, dpr * (view.panX + view.zoom * base.ox), dpr * (view.panY + view.zoom * base.oy));
   drawGround();
   if (S.view.person && S.view.scene !== 'photo') drawPerson(L);
-  const ps = S.pole.size;
-  ctx.fillStyle = '#5b6068'; ctx.fillRect(-ps / 2, 0, ps, Math.max(L.lowest, 1));
-  if (L.cover.y1 > 0) { ctx.fillStyle = ALUM; ctx.fillRect(L.cover.x0, 0, L.cover.x1 - L.cover.x0, L.cover.y1); }
+  if (L.trailer) drawTrailer(L);
+  else {
+    const ps = S.pole.size;
+    ctx.fillStyle = '#5b6068'; ctx.fillRect(-ps / 2, 0, ps, Math.max(L.lowest, 1));
+    if (L.cover.y1 > 0) { ctx.fillStyle = ALUM; ctx.fillRect(L.cover.x0, 0, L.cover.x1 - L.cover.x0, L.cover.y1); }
+  }
   L.parts.forEach(p => {
     if (p.kind === 'reveal') { ctx.fillStyle = '#26292e'; ctx.fillRect(p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0); }
     else if (p.kind === 'led') drawLED(p, t);
@@ -802,6 +844,7 @@ function updateInfo() {
   const rows = [['Overall height', `${fmt(L.total)}" (${ftin(L.total)})`]];
   if (L.faces.top) rows.push(['Top face visible', `${fmt(L.faces.top.w)}" × ${fmt(L.faces.top.h)}"`]);
   if (S.led.on) { const z = ledSize(); rows.push(['LED matrix', `${S.led.cols} × ${S.led.rows} px`], ['LED size', `${fmt(z.h)}" H × ${fmt(z.w)}" W`], ['Pixels per face', (S.led.cols * S.led.rows).toLocaleString()]); }
+  if (L.trailer) rows.push(['Base', `Trailer ${fmt(S.trailer.len)}" long, screen ${fmt(S.trailer.clear)}" up`]);
   if (L.faces.bot) rows.push(['Bottom face visible', `${fmt(L.faces.bot.w)}" × ${fmt(L.faces.bot.h)}"`]);
   specsEl.innerHTML = rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
   readout.textContent = S.led.on ? `${S.led.pitch}mm · ${S.led.cols}×${S.led.rows} px · ${fmt(L.total)}" tall` : `${fmt(L.total)}" tall · ${ftin(L.total)}`;
@@ -975,6 +1018,11 @@ function select(k) {
 
 /* ---------------- Generic bindings for dimension inputs ---------------- */
 const getP = p => p.split('.').reduce((o, k) => o[k], S);
+function applyShow() {
+  document.querySelectorAll('[data-show]').forEach(x => x.hidden = !getP(x.dataset.show));
+  document.querySelectorAll('[data-hide]').forEach(x => x.hidden = !!getP(x.dataset.hide));
+  document.querySelectorAll('input[name="base"]').forEach(r => r.checked = r.value === (S.pole.trailer ? 'trailer' : 'pole'));
+}
 const setP = (p, v) => { const ks = p.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; };
 function syncInputs() {
   document.querySelectorAll('[data-path]').forEach(el => {
@@ -985,7 +1033,7 @@ function syncInputs() {
   document.getElementById('preset').value = S.preset;
   document.querySelectorAll('input[name="scene"]').forEach(r => r.checked = r.value === S.view.scene);
   S.view.isPhoto = S.view.scene === 'photo';
-  document.querySelectorAll('[data-show]').forEach(el => el.hidden = !getP(el.dataset.show));
+  applyShow();
   updateInfo();
 }
 document.querySelectorAll('[data-path]').forEach(el => {
@@ -995,15 +1043,20 @@ document.querySelectorAll('[data-path]').forEach(el => {
     else if (el.type === 'number' || el.type === 'range' || el.dataset.num) { v = parseFloat(el.value); if (!isFinite(v)) return; if (el.min !== '' && v < +el.min) v = +el.min; }
     else v = el.value;
     setP(el.dataset.path, v);
-    document.querySelectorAll('[data-show]').forEach(x => x.hidden = !getP(x.dataset.show));
+    applyShow();
     updateInfo(); dirty = true;
   });
 });
+document.querySelectorAll('input[name="base"]').forEach(r => r.addEventListener('change', () => {
+  S.pole.trailer = r.value === 'trailer';
+  if (S.pole.trailer) S.double = false;
+  syncInputs(); fit(); dirty = true;
+}));
 document.getElementById('top-copytext').addEventListener('input', e => { S.top.copyText = e.target.value; dirty = true; });
 function applyPreset(key) {
   const fresh = BASE(); PRESETS[key](fresh);
   S.double = fresh.double;
-  ['top', 'topRev', 'led', 'botRev', 'bot', 'pole'].forEach(k => {
+  ['top', 'topRev', 'led', 'botRev', 'bot', 'pole', 'trailer'].forEach(k => {
     const keep = k === 'top' ? { copyText: S.top.copyText } : {};
     S[k] = Object.assign(fresh[k], keep);
   });
@@ -1013,7 +1066,7 @@ document.getElementById('preset').addEventListener('change', e => applyPreset(e.
 document.getElementById('resetPreset').addEventListener('click', () => applyPreset(S.preset));
 document.querySelectorAll('input[name="scene"]').forEach(r => r.addEventListener('change', () => {
   S.view.scene = r.value; S.view.isPhoto = r.value === 'photo';
-  document.querySelectorAll('[data-show]').forEach(x => x.hidden = !getP(x.dataset.show));
+  applyShow();
   fit(); dirty = true;
 }));
 document.getElementById('photoFile').addEventListener('change', e => {
@@ -1160,8 +1213,21 @@ function build3D() {
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; T.group.add(m); return m; };
   const depthOf = k => Math.max(ps + 3, k === 'led' ? S.led.d : S[k].d);
   const lowest = Math.max(L.lowest, 1);
-  add(new THREE.BoxGeometry(ps, lowest, ps), steel, 0, lowest / 2, 0);
-  if (L.cover.y1 > 0) add(new THREE.BoxGeometry(Math.max(1, S.pole.coverW), L.cover.y1, Math.max(1, S.pole.coverD)), alum, 0, L.cover.y1 / 2, 0);
+  if (L.trailer) {
+    const len = S.trailer.len, tw = S.trailer.width, x0 = -len / 2;
+    const body = new THREE.MeshStandardMaterial({ color: 0x2b2f36, metalness: 0.3, roughness: 0.6 });
+    const tire = new THREE.MeshStandardMaterial({ color: 0x0d0e10, roughness: 0.9 });
+    add(new THREE.BoxGeometry(len, TRAILER_DECK - 18, tw), body, 0, (TRAILER_DECK + 18) / 2, 0);
+    add(new THREE.BoxGeometry(8, Math.max(1, lowest - TRAILER_DECK), 8), steel, 0, (lowest + TRAILER_DECK) / 2, 0);
+    add(new THREE.BoxGeometry(TRAILER_TONGUE, 5, 6), steel, x0 - TRAILER_TONGUE / 2, 26, 0);
+    add(new THREE.BoxGeometry(3, 26, 3), steel, x0 - TRAILER_TONGUE + 15, 13, 0);
+    [-17, 17].forEach(cx => [-1, 1].forEach(sd => {
+      const w = add(new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 9, 24), tire, cx, WHEEL_R, sd * (tw / 2 + 4.5));
+      w.rotation.x = Math.PI / 2;
+    }));
+    [x0 + 11, len / 2 - 11].forEach(x => [-1, 1].forEach(sd => add(new THREE.BoxGeometry(3, 20, 3), steel, x, 10, sd * (tw / 2 - 6))));
+  } else add(new THREE.BoxGeometry(ps, lowest, ps), steel, 0, lowest / 2, 0);
+  if (!L.trailer && L.cover.y1 > 0) add(new THREE.BoxGeometry(Math.max(1, S.pole.coverW), L.cover.y1, Math.max(1, S.pole.coverD)), alum, 0, L.cover.y1 / 2, 0);
   const sides = S.double ? [1, -1] : [1];
   L.parts.forEach((p, i) => {
     if (p.kind === 'reveal') {
@@ -1279,7 +1345,7 @@ function update3DTex(t) {
   });
   texDirty = false;
 }
-function layoutSig() { return JSON.stringify([S.double, S.top, S.topRev, S.led, S.botRev, S.bot, S.pole, S.view.person]); }
+function layoutSig() { return JSON.stringify([S.double, S.top, S.topRev, S.led, S.botRev, S.bot, S.pole, S.trailer, S.view.person]); }
 function placeCam() {
   const o = T.orbit, sp = Math.sin(o.phi);
   T.cam.position.set(o.target.x + o.radius * sp * Math.sin(o.theta), o.target.y + o.radius * Math.cos(o.phi), o.target.z + o.radius * sp * Math.cos(o.theta));

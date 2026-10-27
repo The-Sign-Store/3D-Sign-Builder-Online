@@ -12,7 +12,10 @@ It runs entirely in the browser, so uploaded artwork never leaves the visitor's 
   - CC-C: 5' x 8' peak roof changeable copy
   - LED-A: 24" x 85" cabinet + 10mm 72 x 216 LED
   - LED-B: 24" x 75" cabinet + 10mm 72 x 192 LED
-- **Fully adjustable:** top and bottom cabinets (flat or pan face, peak roof, retainer width, depth), changeable copy (lines, letter and panel size, letter text), reveals, LED pitch and pixel matrix, pole and pole cover.
+- **Demo trailer presets:** LED screens on a mobile trailer (chassis, tandem wheels, tongue, jacks, mast):
+  - Vantage Demo Trailer 3: 480 x 240 px (10mm pitch assumed: 189" x 94.5")
+  - Media Display Demo Trailer: 12mm, 400 x 240 px (189" x 113.4")
+- **Fully adjustable:** top and bottom cabinets (flat or pan face, peak roof, retainer width, depth), changeable copy (lines, letter and panel size, letter text), reveals, LED pitch and pixel matrix, and the base: pole and cover, or a mobile trailer (length, width, screen height).
 - **Content on every face:** an image, a video (MP4/WebM) or scrolling text, with fill / fit / stretch modes. Upload a file, drag it straight onto a face, or paste a link. In 3D, each face's back side can match the front, show different artwork, or be blank.
 - **Paste a link:** direct links to image or video files (`.jpg`, `.png`, `.gif`, `.mp4`, `.webm` …) load onto any face. YouTube links (watch, youtu.be, Shorts, live) play as an overlay on the face in the 2D view.
 - **True LED resolution:** LED content is resampled to the board's real pixel matrix. **LED close-up** shows individual diodes. Each panel shows the exact size to design content at (e.g. 216 x 72 px).
