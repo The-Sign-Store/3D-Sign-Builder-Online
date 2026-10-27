@@ -17,8 +17,21 @@
 UPDATING: after changing Index.html, use Deploy > Manage deployments >
 edit (pencil) > Version: "New version" > Deploy. The URL stays the same.
 
+SHARING
+- The Share button saves the sign and its uploaded images/videos to a Drive
+  folder named "3D Sign Builder Shares" in the account that deployed the app
+  (Execute as: Me). The first time, Google asks you to allow Drive access.
+- The link it gives opens your web app with ?share=... and loads that sign.
+  Viewers need access to the web app, not to the Drive folder.
+- Anyone who can open the web app can create shares in that folder. If it is
+  open to "Anyone", consider a weekly clean-up: Triggers > Add trigger >
+  cleanUpOldShares > Time-driven > Week timer (removes shares over 90 days).
+- Limit: 100 MB of files per share (MAX_SHARE_MB at the top of Code.gs).
+- Canva, YouTube and similar "view" links are web pages, not files. Download
+  the design as MP4 and upload it, then Share.
+
 NOTES
-- Uploaded images/videos stay in the visitor's browser; nothing is stored in Google.
+- Files stay in the visitor's browser unless they press Share.
 - Video support depends on the browser: MP4 (H.264) and WebM work in Chrome,
   Edge, Firefox and Safari. MOV files from iPhones usually work in Safari only.
 - Snapshot opens a PNG you can right-click > Save image as (works in 2D and 3D).

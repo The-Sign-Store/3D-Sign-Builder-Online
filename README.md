@@ -22,6 +22,7 @@ It runs entirely in the browser, so uploaded artwork never leaves the visitor's 
 - **2D view:** scale front elevation with dimension lines, a 6 ft (72") silhouette for scale, day/night, and placement on an uploaded site photo.
 - **3D view:** orbit, zoom and pan; real cabinet depths, retainers, shadows; front / 3/4 / back views; day/night lighting.
 - **Snapshot:** export the current 2D or 3D view as a PNG.
+- **Share (Apps Script version):** saves the sign and any uploaded images or videos to a Google Drive folder and gives a link that reopens it exactly, in 2D or 3D. Files up to 100 MB per share.
 
 ## Repository layout
 
@@ -51,7 +52,7 @@ and commit the source together with both generated files.
 2. Under **Build and deployment**, choose **Deploy from a branch**, branch `main`, folder `/ (root)`, then **Save**.
 3. The app appears at `https://the-sign-store.github.io/3D-Sign-Builder-Online/` within a few minutes. GitHub Pages on a private repo requires a paid GitHub plan.
 
-**Google Apps Script:** see `apps-script/SETUP.txt`. In short, paste `Code.gs` and `Index.html` into a new Apps Script project and deploy as a web app.
+**Google Apps Script:** see `apps-script/SETUP.txt`. In short, paste `Code.gs` and `Index.html` into a new Apps Script project and deploy as a web app. This version adds **Share**, which stores shared signs in a `3D Sign Builder Shares` folder in the deploying account's Drive.
 
 ## Dependencies
 

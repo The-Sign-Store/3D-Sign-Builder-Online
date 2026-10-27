@@ -123,7 +123,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 #stage { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 #stage.dragging { cursor: grabbing; }
 .hud { position: absolute; display: flex; gap: 6px; align-items: center; }
-.hud.tl { top: 12px; left: 12px; right: 110px; flex-wrap: wrap; }
+.hud.tl { top: 12px; left: 12px; right: 170px; flex-wrap: wrap; }
 .hud .seg { border-color: rgba(255,255,255,.18); background: rgba(14,17,22,.78); }
 .hud .seg label { background: transparent; color: #cfd6de; border-left-color: rgba(255,255,255,.18); padding: 5px 11px; font-weight: 600; }
 .hud .seg input:checked + label { background: #f0a63a; color: #1a1206; }
@@ -141,6 +141,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
 .modal { position: fixed; inset: 0; background: rgba(5,7,10,.72); display: grid; place-items: center; z-index: 50; padding: 16px; }
 .modal .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-width: min(960px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.modal progress { width: 100%; accent-color: var(--accent); }
+.modal .sheet.narrow { width: min(520px, 100%); }
 .modal img { max-width: 100%; border-radius: 6px; border: 1px solid var(--line); }
 
 @media (max-width: 860px) {
@@ -329,12 +331,34 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
       </span>
     </div>
     <span class="readout hud-note" id="note3d" hidden></span>
+    <span class="readout hud-note" id="loadNote" hidden style="top:auto;bottom:56px"></span>
     <div class="hud tr">
+      <button class="btn small" id="shareBtn" type="button">Share</button>
       <button class="btn small" id="snap" type="button">Snapshot</button>
     </div>
     <div class="hud bl"><span class="readout" id="readout"></span><span class="readout" id="zoomRead">100%</span></div>
     <div class="drop-note" id="dropNote" hidden>Drop on a face or the LED board</div>
   </main>
+</div>
+
+<div class="modal" id="shareModal" hidden>
+  <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <strong id="shareTitle">Share this sign</strong>
+      <button class="btn small" id="shareClose" type="button">Close</button>
+    </div>
+    <p class="hint" id="shareInfo"></p>
+    <div id="shareProgress" hidden style="display:flex;flex-direction:column;gap:6px">
+      <progress id="shareBar" max="100" value="0"></progress>
+      <span class="hint" id="shareStatus"></span>
+    </div>
+    <div class="linkrow" id="shareResult" hidden>
+      <input type="url" id="shareLink" readonly aria-label="Share link">
+      <button class="btn small" id="shareCopy" type="button">Copy</button>
+    </div>
+    <p class="msg" id="shareMsg" hidden></p>
+    <button class="btn primary" id="shareGo" type="button">Create share link</button>
+  </div>
 </div>
 
 <div class="modal" id="snapModal" hidden>
@@ -918,7 +942,7 @@ function loadFileInto(k, file) {
   const sl = slots[k];
   if (sl.url) URL.revokeObjectURL(sl.url);
   if (sl.kind === 'video' && sl.media) sl.media.pause();
-  const url = URL.createObjectURL(file); sl.url = url; sl.name = file.name; sl.type = 'media';
+  const url = URL.createObjectURL(file); sl.url = url; sl.name = file.name; sl.type = 'media'; sl.file = file; sl.link = null;
   sl.isSample = false; sl.tainted = false; sl.yt = null; sl.loadToken = (sl.loadToken || 0) + 1; setMsg(k, '');
   if (file.type.startsWith('video')) {
     const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', '');
@@ -928,6 +952,14 @@ function loadFileInto(k, file) {
     const im = new Image(); im.onload = () => { dirty = true; }; im.src = url; sl.media = im; sl.kind = 'image';
   }
   if (k === 'led' && sl.fit === 'contain') sl.fit = 'cover';
+  syncSlot(k); dirty = true;
+}
+function loadBackFile(k, f) {
+  if (!f) return;
+  const sl = slots[k], b = sl.back; if (b.url) URL.revokeObjectURL(b.url); if (b.kind === 'video' && b.media) b.media.pause();
+  b.url = URL.createObjectURL(f); b.name = f.name; b.file = f;
+  if (f.type.startsWith('video')) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.src = b.url; v.play().catch(() => {}); b.media = v; b.kind = 'video'; }
+  else { const im = new Image(); im.onload = () => { dirty = true; }; im.src = b.url; b.media = im; b.kind = 'image'; }
   syncSlot(k); dirty = true;
 }
 /* ---- Paste-a-link: direct image/video files, or YouTube (2D overlay) ---- */
@@ -952,7 +984,7 @@ async function loadUrlInto(k, raw) {
   const token = sl.loadToken = (sl.loadToken || 0) + 1;
   const yt = link.match(YT_RE);
   if (yt) {
-    clearMedia(sl); Object.assign(sl, { type: 'media', kind: 'youtube', media: null, yt: yt[1], name: 'YouTube video', isSample: false, tainted: false });
+    clearMedia(sl); Object.assign(sl, { type: 'media', kind: 'youtube', media: null, yt: yt[1], name: 'YouTube video', isSample: false, tainted: false, file: null, link });
     if (k === 'led' && sl.fit === 'contain') sl.fit = 'cover';
     setMsg(k, 'YouTube plays on top of this face in the 2D view, without the LED pixel effect. It does not appear in 3D or in snapshots.');
     syncSlot(k); dirty = true; return;
@@ -967,7 +999,7 @@ async function loadUrlInto(k, raw) {
         const el = await attempt(kind, u.href, cors);
         if (token !== sl.loadToken) return; // a newer load replaced this one
         clearMedia(sl);
-        Object.assign(sl, { type: 'media', kind, media: el, yt: null, isSample: false, tainted: !cors,
+        Object.assign(sl, { type: 'media', kind, media: el, yt: null, isSample: false, tainted: !cors, file: null, link: u.href,
                             name: decodeURIComponent(u.pathname.split('/').pop() || u.hostname) });
         if (kind === 'video') el.play().catch(() => {});
         if (k === 'led' && sl.fit === 'contain') sl.fit = 'cover';
@@ -996,14 +1028,7 @@ async function loadUrlInto(k, raw) {
   $(`play-${k}`).addEventListener('click', () => { const v = sl.media; if (!v) return; v.paused ? v.play().catch(() => {}) : v.pause(); syncSlot(k); dirty = true; });
   $(`slot-${k}`).addEventListener('click', () => select(k));
   $(`backmode-${k}`).addEventListener('change', e => { sl.backMode = e.target.value; syncSlot(k); dirty = true; });
-  $(`backfile-${k}`).addEventListener('change', e => {
-    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    const b = sl.back; if (b.url) URL.revokeObjectURL(b.url); if (b.kind === 'video' && b.media) b.media.pause();
-    b.url = URL.createObjectURL(f); b.name = f.name;
-    if (f.type.startsWith('video')) { const v = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.src = b.url; v.play().catch(() => {}); b.media = v; b.kind = 'video'; }
-    else { const im = new Image(); im.onload = () => { dirty = true; }; im.src = b.url; b.media = im; b.kind = 'image'; }
-    syncSlot(k); dirty = true;
-  });
+  $(`backfile-${k}`).addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; loadBackFile(k, f); });
   syncSlot(k);
 });
 function select(k) {
@@ -1427,6 +1452,123 @@ cv3.addEventListener('pointerup', e => {
 });
 cv3.addEventListener('contextmenu', e => e.preventDefault());
 cv3.addEventListener('wheel', e => { e.preventDefault(); dolly(Math.exp(e.deltaY * 0.0012)); }, { passive: false });
+
+/* ================= Share (Google Apps Script + Drive) ================= */
+const IN_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+const CHUNK = 3 * 1024 * 1024; // raw bytes per upload piece
+const gs = (fn, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e && e.message ? e : new Error(String(e))))[fn](...args));
+const toB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+const fromB64 = b64 => { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+const mb = n => n < 1048576 ? Math.max(1, Math.round(n / 1024)) + ' KB' : (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+const shareModal = document.getElementById('shareModal'), $id = id => document.getElementById(id);
+const SLOT_FIELDS = ['type', 'fit', 'bg', 'text', 'color', 'scroll', 'speed', 'backMode'];
+
+function shareFiles() {
+  const out = [];
+  ['top', 'led', 'bot'].forEach(k => {
+    const sl = slots[k]; if (!SLOT_META[k].on()) return;
+    if (sl.type === 'media' && sl.file) out.push({ key: k, file: sl.file, label: SLOT_META[k].title });
+    if (S.double && sl.backMode === 'own' && sl.back.file) out.push({ key: k + '-back', file: sl.back.file, label: SLOT_META[k].title + ' (back)' });
+  });
+  return out;
+}
+function shareSettings() {
+  const sl = {};
+  ['top', 'led', 'bot'].forEach(k => {
+    const x = slots[k], o = {}; SLOT_FIELDS.forEach(f => o[f] = x[f]);
+    o.source = x.type !== 'media' ? null : x.file ? 'file' : x.link ? 'link' : x.isSample ? 'sample' : null;
+    o.link = x.file ? null : (x.link || null);
+    sl[k] = o;
+  });
+  return JSON.stringify({ v: 1, preset: S.preset, mode,
+    S: { double: S.double, top: S.top, topRev: S.topRev, led: S.led, botRev: S.botRev, bot: S.bot, pole: S.pole, trailer: S.trailer,
+         view: { scene: S.view.scene === 'photo' ? 'day' : S.view.scene, dims: S.view.dims, person: S.view.person } },
+    slots: sl });
+}
+function openShare() {
+  ['shareProgress', 'shareResult', 'shareMsg'].forEach(id => $id(id).hidden = true);
+  $id('shareGo').hidden = false; $id('shareGo').disabled = false;
+  if (!IN_APPS_SCRIPT) {
+    $id('shareInfo').innerHTML = 'Sharing saves your sign and its videos to Google Drive, so it works in the <b>Google Apps Script</b> version of this builder. Open the builder from your Apps Script web app link to share.';
+    $id('shareGo').hidden = true;
+  } else {
+    const files = shareFiles(), total = files.reduce((a, f) => a + f.file.size, 0);
+    $id('shareInfo').innerHTML = files.length
+      ? `Saves this sign and ${files.length === 1 ? 'its file' : 'its ' + files.length + ' files'} (${files.map(f => `${f.label}: ${f.file.name}`).join(', ')}; ${mb(total)} total) to Google Drive and makes a link that opens it exactly as you see it. Anyone who can open this web app can open the link.`
+      : 'Saves this sign (sizes, text, colors and links) and makes a link that opens it exactly as you see it. Anyone who can open this web app can open the link.';
+    if (total > 100 * 1048576) { showShareMsg(`Shared files must total 100 MB or less; these are ${mb(total)}. Use a shorter or smaller video.`, true); $id('shareGo').disabled = true; }
+  }
+  shareModal.hidden = false;
+}
+function showShareMsg(t, bad) { const m = $id('shareMsg'); m.textContent = t; m.hidden = !t; m.classList.toggle('bad', !!bad); }
+async function createShareLink() {
+  const files = shareFiles(), go = $id('shareGo'), bar = $id('shareBar'), st = $id('shareStatus');
+  go.disabled = true; showShareMsg(''); $id('shareProgress').hidden = false;
+  const totalChunks = Math.max(1, files.reduce((a, f) => a + Math.ceil(f.file.size / CHUNK), 0)); let done = 0;
+  try {
+    st.textContent = 'Saving sign settings…';
+    const { id, url } = await gs('createShare', shareSettings());
+    const manifest = { media: {} };
+    for (const f of files) {
+      const n = Math.ceil(f.file.size / CHUNK);
+      for (let i = 0; i < n; i++) {
+        st.textContent = `Uploading ${f.label}: ${f.file.name} (${mb(Math.min(f.file.size, (i + 1) * CHUNK))} of ${mb(f.file.size)})`;
+        await gs('putChunk', id, f.key, i, await toB64(f.file.slice(i * CHUNK, (i + 1) * CHUNK)));
+        bar.value = (++done / totalChunks) * 100;
+      }
+      manifest.media[f.key] = { name: f.file.name, mime: f.file.type || 'application/octet-stream', size: f.file.size, chunks: n };
+    }
+    await gs('finishShare', id, JSON.stringify(manifest));
+    bar.value = 100; st.textContent = 'Done.';
+    $id('shareLink').value = `${url}?share=${id}`; $id('shareResult').hidden = false; go.hidden = true;
+  } catch (e) {
+    showShareMsg(`Sharing stopped: ${e.message}. Check your connection and try again.`, true); go.disabled = false;
+  }
+}
+async function loadShared(id) {
+  const note = $id('loadNote'); note.hidden = false; note.textContent = 'Loading shared sign…';
+  try {
+    const res = await gs('getShare', id), cfg = JSON.parse(res.settings), manifest = JSON.parse(res.manifest);
+    ['top', 'topRev', 'led', 'botRev', 'bot', 'pole', 'trailer'].forEach(k => { if (cfg.S[k]) S[k] = Object.assign(BASE()[k] || {}, cfg.S[k]); });
+    S.double = !!cfg.S.double; Object.assign(S.view, cfg.S.view || {}); S.preset = cfg.preset in PRESETS ? cfg.preset : S.preset;
+    ['top', 'led', 'bot'].forEach(k => {
+      const c = (cfg.slots || {})[k]; if (!c) return; const sl = slots[k];
+      SLOT_FIELDS.forEach(f => { if (c[f] !== undefined) sl[f] = c[f]; });
+      if (c.source === 'link' && c.link) { sl.link = c.link; loadUrlInto(k, c.link); }
+      if (c.source !== 'sample') sl.isSample = false;
+      if (c.source === null && sl.type === 'media') { sl.media = null; }
+      syncSlot(k);
+    });
+    syncInputs(); fit();
+    if (cfg.mode === '3d') { $id('mode-3d').checked = true; setMode('3d'); }
+    const entries = Object.entries(manifest.media || {});
+    for (const [key, m] of entries) {
+      const parts = [];
+      for (let i = 0; i < m.chunks; i++) {
+        note.textContent = `Loading ${m.name} (${Math.round((i / m.chunks) * 100)}%)…`;
+        parts.push(fromB64(await gs('getChunk', id, key, i)));
+      }
+      const file = new File(parts, m.name, { type: m.mime });
+      const [k, back] = key.split('-');
+      if (back) loadBackFile(k, file); else loadFileInto(k, file);
+    }
+    note.hidden = true; dirty = true;
+  } catch (e) {
+    note.textContent = `Couldn't open this shared sign: ${e.message}`;
+  }
+}
+$id('shareBtn').addEventListener('click', openShare);
+$id('shareGo').addEventListener('click', createShareLink);
+$id('shareClose').addEventListener('click', () => shareModal.hidden = true);
+shareModal.addEventListener('click', e => { if (e.target === shareModal) shareModal.hidden = true; });
+$id('shareCopy').addEventListener('click', async () => {
+  const inp = $id('shareLink');
+  try { await navigator.clipboard.writeText(inp.value); $id('shareCopy').textContent = 'Copied'; }
+  catch (e) { inp.focus(); inp.select(); $id('shareCopy').textContent = 'Press Ctrl+C'; }
+  setTimeout(() => $id('shareCopy').textContent = 'Copy', 2000);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') shareModal.hidden = true; });
+if (IN_APPS_SCRIPT && google.script.url) google.script.url.getLocation(loc => { const id = loc && loc.parameter && loc.parameter.share; if (id) loadShared(id); });
 
 /* ---------------- Boot ---------------- */
 makeSamples(); syncInputs(); ['top', 'led', 'bot'].forEach(syncSlot); select('led'); resize();
