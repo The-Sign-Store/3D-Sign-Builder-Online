@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
 <style>
-/* The Sign Store · 3D Sign Builder. Google-style dark surfaces; brand red→black app bar, yellow for selection, red for primary actions.
+/* The Sign Store · 3D Sign Builder. Google-style dark surfaces; solid brand-red app bar, yellow for selection, red for primary actions.
    Layout: app bar on top; control rail left, full-height stage right; stacks (stage first) on phones. Single dark theme by design. */
 :root {
   --bg: #202124;            /* Google dark background */
@@ -39,7 +39,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 
 .shell { height: 100%; display: grid; grid-template-rows: auto 1fr; }
 .appbar {
-  background: linear-gradient(180deg, #ed1e24 0%, #94302a 55%, #070707 100%);
+  background: var(--brand-red);
   padding-block: 10px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
