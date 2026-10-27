@@ -19,7 +19,7 @@ It runs entirely in the browser, so uploaded artwork never leaves the visitor's 
 - **Content on every face:** an image, a video (MP4/WebM) or scrolling text, with fill / fit / stretch modes. Upload a file, drag it straight onto a face, or paste a link. In 3D, each face's back side can match the front, show different artwork, or be blank.
 - **Paste a link:** direct links to image or video files (`.jpg`, `.png`, `.gif`, `.mp4`, `.webm` …) load onto any face. YouTube links (watch, youtu.be, Shorts, live) play as an overlay on the face in the 2D view.
 - **True LED resolution:** LED content is resampled to the board's real pixel matrix. **LED close-up** shows individual diodes. Each panel shows the exact size to design content at (e.g. 216 x 72 px).
-- **2D view:** scale front elevation with dimension lines, a 6 ft (72") silhouette for scale, day/night, and placement on an uploaded site photo.
+- **2D view:** scale front elevation with dimension lines, a 6 ft (72") silhouette (with mustache) for scale, day/night, and placement on an uploaded site photo.
 - **3D view:** orbit, zoom and pan; real cabinet depths, retainers, shadows; front / 3/4 / back views; day/night lighting.
 - **Snapshot:** export the current 2D or 3D view as a PNG.
 - **Share (Apps Script version):** saves the sign and any uploaded images or videos to a Google Drive folder and gives a link that reopens it exactly, in 2D or 3D. Files up to 100 MB per share.
