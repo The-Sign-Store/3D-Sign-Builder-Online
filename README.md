@@ -13,9 +13,10 @@ It runs entirely in the browser, so uploaded artwork never leaves the visitor's 
   - LED-A: 24" x 85" cabinet + 10mm 72 x 216 LED
   - LED-B: 24" x 75" cabinet + 10mm 72 x 192 LED
 - **Fully adjustable:** top and bottom cabinets (flat or pan face, peak roof, retainer width, depth), changeable copy (lines, letter and panel size, letter text), reveals, LED pitch and pixel matrix, pole and pole cover.
-- **Content on every face:** an image, a video (MP4/WebM) or scrolling text, with fill / fit / stretch modes. Drag a file straight onto a face. In 3D, each face's back side can match the front, show different artwork, or be blank.
+- **Content on every face:** an image, a video (MP4/WebM) or scrolling text, with fill / fit / stretch modes. Upload a file, drag it straight onto a face, or paste a link. In 3D, each face's back side can match the front, show different artwork, or be blank.
+- **Paste a link:** direct links to image or video files (`.jpg`, `.png`, `.gif`, `.mp4`, `.webm` …) load onto any face. YouTube links (watch, youtu.be, Shorts, live) play as an overlay on the face in the 2D view.
 - **True LED resolution:** LED content is resampled to the board's real pixel matrix. **LED close-up** shows individual diodes. Each panel shows the exact size to design content at (e.g. 216 x 72 px).
-- **2D view:** scale front elevation with dimension lines, a 6 ft person for scale, day/night, and placement on an uploaded site photo.
+- **2D view:** scale front elevation with dimension lines, a 6 ft (72") silhouette for scale, day/night, and placement on an uploaded site photo.
 - **3D view:** orbit, zoom and pan; real cabinet depths, retainers, shadows; front / 3/4 / back views; day/night lighting.
 - **Snapshot:** export the current 2D or 3D view as a PNG.
 
@@ -61,4 +62,7 @@ All loaded from CDNs at runtime; there is nothing to install:
 - The sample logo ("Riverbend Coffee") and LED promo are placeholders, clearly marked as samples in the app.
 - iPhone `.MOV` video may only play in Safari; MP4 (H.264) works everywhere.
 - Site-photo placement is 2D only; the 3D view uses a plain day or night scene.
+- **Linked files:** a file from a site that sends CORS headers (`Access-Control-Allow-Origin`) works everywhere. Most CDNs, S3 and Cloudflare can be set to send them. A site without them still shows the file in 2D, but it can't appear in 3D or in a snapshot; the app says so and suggests uploading the file instead.
+- **YouTube:** shown with YouTube's own embedded player on top of the face. It has no LED pixel effect, isn't in 3D (the face shows a placeholder) and isn't captured by Snapshot. YouTube doesn't allow other sites to read video frames, so this is the most that's possible.
+- Links don't work in the copy published inside Claude, which blocks outside content. Use GitHub Pages or Apps Script.
 - Renders are a visual guide, not a color proof: lit polycarbonate and LEDs look different in person.
