@@ -1,6 +1,6 @@
 # 3D Sign Builder Online
 
-A browser tool for previewing what images, videos and text will look like on a sign before it's built. Pick a sign type and size, then drop artwork onto the lit cabinet faces or the LED message board. View it as a scale 2D front elevation or an orbitable 3D model.
+The Sign Store's browser tool for previewing what images, videos and text will look like on a sign before it's built. Pick a sign type and size, then drop artwork onto the lit cabinet faces or the LED message board. View it as a scale 2D front elevation or an orbitable 3D model.
 
 It runs entirely in the browser, so uploaded artwork never leaves the visitor's computer. There is no server and no build step for users.
 
@@ -54,12 +54,16 @@ and commit the source together with both generated files.
 
 **Google Apps Script:** see `apps-script/SETUP.txt`. In short, paste `Code.gs` and `Index.html` into a new Apps Script project and deploy as a web app. This version adds **Share**, which stores shared signs in a `3D Sign Builder Shares` folder in the deploying account's Drive.
 
+## Branding
+
+Google-style dark interface with The Sign Store branding: the logo in a red-to-black app bar, brand yellow for selected controls and focus, brand red for primary actions (Share). The logo is embedded in the page, so no image files need hosting.
+
 ## Dependencies
 
 All loaded from CDNs at runtime; there is nothing to install:
 
 - [three.js](https://threejs.org/) 0.147.0 (jsDelivr) for the 3D view. If it can't load, the 2D view still works and the 3D button says why.
-- Google Fonts: Barlow Condensed, IBM Plex Sans, IBM Plex Mono (system fonts are used as a fallback).
+- Google Fonts: Roboto and Roboto Mono for the interface, Barlow Condensed for lettering drawn on the signs (system fonts are used as a fallback).
 
 ## Notes and limits
 

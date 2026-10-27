@@ -14,7 +14,7 @@ src = (ROOT / "src" / "sign_builder.html").read_text(encoding="utf-8")
 
 # The source is a page fragment: <title>, font links and <style> first, then the app markup and scripts.
 src = src.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', "")
-split = src.index('<div class="app">')
+split = src.index('<div class="shell">')
 head_part, body_part = src[:split], src[split:]
 
 RESET = ("<style>html,body{margin:0}body{font:14px system-ui,-apple-system,'Segoe UI',sans-serif}"
